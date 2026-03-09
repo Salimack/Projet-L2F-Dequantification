@@ -1,0 +1,13 @@
+name = "L2F2"
+uuid = "4dcdeae6-8727-46cb-b2e5-634683e5604d"
+version = "0.1.0"
+authors = ["KANGNI Dina", "BENALI Abdallah", "ACHAK Salim", "ZOUAD Mohammed"]
+
+[deps]
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
+
+[compat]
+julia = "1.6"
+GLMakie = "0.9"
+ZipFile = "0.10"

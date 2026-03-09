@@ -1,0 +1,12 @@
+Copyright (c) 2026 KANGNI Dina, BENALI Abdallah, ACHAK Salim, ZOUAD Mohammed
+
+Université Paris Cité — UE Projet Informatique
+
+Ce projet est réalisé à but pédagogique dans le cadre de l'UE Projet de l'Université Paris Cité.
+
+Toute réutilisation ou diffusion, même partielle, est soumise 
+à l'accord préalable des auteurs et doit faire mention explicite 
+de ces derniers, conformément aux articles L.111-1 et L.112-1 
+du Code de la Propriété Intellectuelle français.
+
+Tous droits réservés.

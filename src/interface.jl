@@ -390,7 +390,10 @@ Prend en entrée le chemin du dossier source où xQ.dat et P.ppm sont générés
 function telecharger_xQP(dossier_source::String)
     dossier_dest = pick_folder()
 
-    #creation du dossier de sauvegarde, xqP
+    if dossier_dest == "" || isnothing(dossier_dest)
+        return
+    end
+
     dossier_xQP = joinpath(dossier_dest, "xQP")
     mkpath(dossier_xQP)
 

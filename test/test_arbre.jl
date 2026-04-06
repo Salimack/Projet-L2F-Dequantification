@@ -75,5 +75,5 @@ end
     serie = extraire_serie(e3)
     # extraire_serie de dina remonte jusqua noeud !== nothing
     # donc ca inclut la racine (valeur 0)
-    @test serie == [Int16(0), Int16(2), Int16(3), Int16(4)]
+    @test serie == [Int16(2), Int16(3), Int16(4)]
 end

@@ -90,7 +90,7 @@ end
         noeud = n
 
         #Remontons de n à la racine afin d'en extraire la branche
-        while noeud !== nothing
+        while noeud.parent !== nothing
             push!(sequence, noeud.valeur)
             noeud = noeud.parent
         end

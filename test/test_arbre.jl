@@ -2,7 +2,7 @@
 # teste toutes les fonctions de arbre.jl
 
 using Test
-include("../src/algorithm/arbre.jl")
+include("../src/algorithme/arbre.jl")
 
 @testset "creer_arbre" begin
     a = creer_arbre()
@@ -10,7 +10,7 @@ include("../src/algorithm/arbre.jl")
     @test a.nb_branches == 0
 end
 
-@testset "est_feuille" begin
+@testset "creer_noeud" begin
     a = creer_arbre()
     parent = Noeud(Int16(0), nothing, false, nothing, Noeud[])
     a.racine = parent
@@ -20,6 +20,11 @@ end
 end
 
 @testset "ajouter_enfant!" begin
+     P = Dict(
+        (Int16(8), Int16(11)) => 3,
+        (Int16(3), Int16(5)) => 1
+    )
+        
     a = creer_arbre()
     parent = Noeud(Int16(0), nothing, false, nothing, Noeud[])
     a.racine = parent
@@ -33,6 +38,10 @@ end
 end
 
 @testset "supprimer_noeud!" begin
+    P = Dict(
+        (Int16(8), Int16(11)) => 3,
+        (Int16(3), Int16(5)) => 1
+    )
     a = creer_arbre()
     parent = Noeud(Int16(0), nothing, false, nothing, Noeud[])
     a.racine = parent
@@ -45,6 +54,7 @@ end
 end
 
 @testset "compter_branches" begin
+    P = Dict((Int16(2), Int16(4)) => 2, (Int16(2), Int16(5)) => 5)
     a = creer_arbre()
     parent = Noeud(Int16(0), nothing, false, nothing, Noeud[])
     a.racine = parent

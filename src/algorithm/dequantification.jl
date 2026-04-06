@@ -1,39 +1,24 @@
 #=
-Ce module réalise l'algorithme de dequantificationde la serie xQ à partir de P, l'histogramme
+Ce module réalise l'algorithme de dequantification de la serie xQ à partir de P, l'histogramme
 =#
 include("arbre.jl")
 
 
 
-#Verifie si noeud.valeur et valeur sont compatibles avec P
-function estCompatible(noeud::Noeud, valeur::Int16)::Bool
+# verifie si noeud.valeur et valeur sont compatibles avec P
+function est_compatible(noeud::Noeud, valeur::Int16)::Bool
     if haskey(noeud.histogramme, (noeud.valeur, valeur))
         return noeud.histogramme[(noeud.valeur, valeur)] > 0
     end
-    return  false
-end
-
-#Extrait la solution trouvée
-function extraire_solution(noeud::Noeud)
-    sequence = []
-    noeud_courant = noeud
-
-    while noeud_courant != null
-        push!(sequence, noeud_courant.valeur)
-        noeud_courant = noeud_courant.parent
-    end
-
-    reverse!(sequence)
-
-    return  sequence
+    return false
 end
 
 
-#Construit le nom du fichier et retourne son chemin
+# construit le nom du fichier et retourne son chemin
 function sauvegarder_solution(solution::Vector{Int16}, chemin_dossier::String, compteur_solutions::Ref{Int})
     compteur_solutions[] += 1
     numero = string(compteur_solutions[])
-    nom_fichier = "/solution_"*numero*".dat"
+    nom_fichier = "solution_" * numero * ".dat"
     chemin_fichier = joinpath(chemin_dossier, nom_fichier)
 
     open(chemin_fichier, "w") do fichier
@@ -44,84 +29,94 @@ function sauvegarder_solution(solution::Vector{Int16}, chemin_dossier::String, c
 end
 
 
-#-elague l'arbre de maniere reniveausif
+# elague l'arbre de maniere recursive
 function elaguer!(arbre::Arbre, n::Noeud)::Nothing
-
     supprimer_noeud!(arbre, n.parent, n)
 
-    if parent.parent!==nothing && est_feuille(n.parent)
+    if n.parent.parent !== nothing && est_feuille(n.parent)
         elaguer!(arbre, n.parent)
     end
+
+    return nothing
 end
 
 
-#Developpe et elague l'arbre binaire des solutions
+# developpe et elague l'arbre binaire des solutions
 function developper(
     arbre::Arbre,
-    noeud ::Noeud{Int16},
+    noeud::Noeud,
     xQ::Vector{Int16},
-    niveau::Int, #position courante dans xQ
-    misAJourArbre::Function,
-    misAJourPourcent::Function,
-    ajouterSolution::Function,
-    maxFeuille:: Ref{Int},
+    niveau::Int,
+    mis_a_jour_arbre::Function,
+    mis_a_jour_pourcent::Function,
+    ajouter_solution::Function,
+    max_feuille::Ref{Int},
     chemin::String,
-    compteur_solutions::Int) ::Nothing
+    compteur_solutions::Ref{Int})::Nothing
 
-    #CAS DE BASE
-    if niveau==length(xQ)
-        solution = extraire_solution(noeud)
+    # cas de base : on a parcouru tout xQ
+    if niveau == length(xQ) + 1
+        solution = extraire_serie(noeud)
         chemin_solution = sauvegarder_solution(solution, chemin, compteur_solutions)
-        ajouterSolution(chemin_solution)
+        ajouter_solution(chemin_solution)
     else
         xQn = xQ[niveau]
-        valeurs_possibles = [xQn,xQn+1]
+        valeurs_possibles = [xQn, xQn + Int16(1)]
         valide = 0
 
-        for valeurs in valeur_possibles
-            if estCompatible(noeud, valeur)
+        for valeur in valeurs_possibles
+            if est_compatible(noeud, valeur)
                 P_copie = copy(noeud.histogramme)
-                P_copie[(noeud.valeur, valeur)] = P_copie[(noeud.valeur, valeur)] - 1
+                P_copie[(noeud.valeur, valeur)] -= 1
 
-                enfant = ajouter_enfant!(arbre, noeud, valeur, pos, P_copie)
+                # pos = false si pair, true si impair
+                enfant = ajouter_enfant!(arbre, noeud, valeur, P_copie, valeur % 2 != 0)
 
                 valide += 1
-                developper(arbre, enfant, xQ, niveau + 1, misAJourArbre, misAJourPourcent, ajouterSolution, maxFeuille, chemin, compteur_solutions)
+                developper(arbre, enfant, xQ, niveau + 1, mis_a_jour_arbre, mis_a_jour_pourcent, ajouter_solution, max_feuille, chemin, compteur_solutions)
             end
         end
 
+        # le parent na plus besoin de P, ses enfants ont leur copie
         noeud.histogramme = nothing
 
         if valide == 0
             elaguer!(arbre, noeud)
         end
 
-        misAJourArbre(arbre)
+        mis_a_jour_arbre(arbre)
 
-        pourcentage = arbre.nbBranche/maxFeuille*100
-        misAJourPourcent(pourcentage)
+        pourcentage = arbre.nb_branches / max_feuille[] * 100
+        mis_a_jour_pourcent(pourcentage)
     end
+
+    return nothing
 end
 
-#Point d'entrée du programme principal
-function dequantifier(xQ::Vecotr{Int16},
+
+# point d'entree du programme principal
+function dequantifier(
+    xQ::Vector{Int16},
     P::Dict{Tuple{Int16, Int16}, Int},
-    misAJourArbre::Function,
-    misAJourPourcent::Function,
-    ajouterSolution::Function,
+    mis_a_jour_arbre::Function,
+    mis_a_jour_pourcent::Function,
+    ajouter_solution::Function,
     chemin::String)
 
     arbre = creer_arbre()
     compteur_solutions = Ref{Int}(0)
-    maxFeuille = Ref{Int}(0)
+    max_feuille = Ref{Int}(0)
 
-    enfant_gauche = ajouter_enfant!(arbre, arbre.racine, xQ[1], false, copy(P))
-    enfant_droit = ajouter_enfant!(arbre, arbre.racine, xQ[1] + Int16(1), true, copy(P))
+    # creer la racine (noeud fictif qui sert juste de point de depart)
+    arbre.racine = Noeud(Int16(0), nothing, false, nothing, Noeud[])
 
-    maxFeuille[] = arbre.nbBranche
-    misAJourArbre(arbre)
+    enfant_gauche = ajouter_enfant!(arbre, arbre.racine, xQ[1], copy(P), false)
+    enfant_droit = ajouter_enfant!(arbre, arbre.racine, xQ[1] + Int16(1), copy(P), true)
 
-    developper(arbre, enfant_gauche, xQ, 2, misAJourArbre, ajouterSolution, misAJourPourcent, maxFeuille, chemin, compteur_solutions)
+    max_feuille[] = arbre.nb_branches
+    mis_a_jour_arbre(arbre)
 
-    developper(arbre, enfant_droit, xQ, 2, misAJourArbre, ajouterSolution, misAJourPourcent, maxFeuille, chemin, compteur_solutions)
+    developper(arbre, enfant_gauche, xQ, 2, mis_a_jour_arbre, mis_a_jour_pourcent, ajouter_solution, max_feuille, chemin, compteur_solutions)
+
+    developper(arbre, enfant_droit, xQ, 2, mis_a_jour_arbre, mis_a_jour_pourcent, ajouter_solution, max_feuille, chemin, compteur_solutions)
 end

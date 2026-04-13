@@ -18,6 +18,7 @@ using ZipFile
 Chemin absolu du dossier data dans lequel les solutions sont enregistrées
 ========================================#
 const DOSSIER_DATA = joinpath(dirname(@__FILE__), "data")
+const DEBUG = true
 
 function creer_interface()
 
@@ -27,7 +28,7 @@ function creer_interface()
     Défintion de la taille de la fenetre et des marges de sécurité
     ===========================================# 
     GLMakie.activate!(title = "Projet de déquantification",focus_on_show  = true)
-    figure = Figure(size = (1200, 500), figure_padding = 60, backgroundcolor = :lightgrey)
+    figure = Figure(size = (1200, 500), figure_padding = 60, backgroundcolor = :lightblue)
 
     #réinitialisation du dossier temp qui contiendra les solutions trouvées par l'algorithme
     mkpath(joinpath(DOSSIER_DATA, "temp"))
@@ -43,13 +44,14 @@ function creer_interface()
     #Observable du graphe: contient le graphe et permet de le mettre à jour
     graphe_obs            = Observable(SimpleDiGraph())
 
-    #Observable du pourcentage des branches restantes
-    pourcent_obs          = Observable(0.0)
-    texte_dynamique = @lift(string(round($pourcent_obs, digits = 2)) * " %") #on arrondit à l'écran le pourcentage à 2 chiffres après la virgule
+    #Observable de la position des noeuds
+    positions_obs = Observable(Point2f[])
 
-   
-    #=On va gérer en parallèle le vecteur contenant toutes les solutions (solution_obs) et le vecteur(selection_obs) contenant les booléens qui enregistrent l'état des solutions (cochés ou pas/true ouo false) =#
-    selection_obs = Observable(Bool[]) #Ovservables des solutions choisis par l'utilisateur
+    #  Observable du nombre de branches restants
+    branches_obs          = Observable(0)
+    texte_dynamique = @lift(string($branches_obs) * " branche(s)") #changement dynamique du texte affiché à l'écran
+
+
     solution_obs          = Observable(String[])  #Observable des solutions restantes
 
     #Nous allons differencier le programme 1 (importation de x) du programme 2 (importation de xQ et P)
@@ -65,11 +67,14 @@ function creer_interface()
     #texte d'erreur affiché dans l'axe
     texte_erreur = Ref{Any}(nothing)
 
+    #//TODO: à paufiner pour la couleur affiché à l'écran (pour l'instant ça reste rouge)
+    total_branches_ref = Ref{Int}(1)
+
     #Observable du label du bouton d'importation. vaut "Importer x" en phase 1, ou alors "Importer xQ et P" en phase 2
     label_bouton_import   = @lift($prog_actuelle == 1 ? "Importer x" : "Importer xQ et P")
 
-    #Observable de la couleur du pourcentage. Il sera affiché en vert s'il devient inferieur ou egal à 5%, rouge sinon
-    couleur_pourcent      = @lift($pourcent_obs <= 5.0 ? :green : :red)
+    # Observable de la couleur du nombre affiché: vert si on a moins de 5% de branches, sinon rouge
+    couleur_branche      = @lift($branches_obs / total_branches_ref[] * 100 <= 5.0 ? :green : :red)
 
     #Observable pour le bouton "Lancer".
     couleur_bouton_lancer = @lift($prog_actuelle == 2 ? :green : :lightgray)
@@ -87,7 +92,7 @@ function creer_interface()
     Layout et les boutons
     L'inerface est divisée comme suit
     COLONNE GAUCHE
-        contient les boutons "tout selectionner" et "exporter" ainsi que les solutions trouvées
+        contient le bouton "exporter les solutions" ainsi que les solutions trouvées
     
     COLONNE DROITE
         contient l'arbre ainsi que les boutons de navigation (lancer et arrêter) et les boutons (importerx/xQ et P et telecharger xQ et P)
@@ -99,13 +104,12 @@ function creer_interface()
     
     #sous-grille pour aligner les boutons
     layout_boutons_import = layout_gauche[2, 1] = GridLayout()
-    bouton_tout_selectionner = Button(layout_boutons_import[1, 1], label = "Tout selectionner", height = 40, tellwidth = false)
-    bouton_exporter = Button(layout_boutons_import[1, 2], label = "Exporter", height = 40, tellwidth = false)
+    bouton_exporter = Button(layout_boutons_import[1, 1], label = "Exporter les solutions", height = 40, tellwidth = false)
     
     colgap!(layout_boutons_import, 100) #espace entre les boutons pour la clarté
     
     #Les solutions
-    Label(layout_gauche[3, 1], "Liste des solutions :", halign = :left, padding = (0, 0, 10, 0))
+    Label(layout_gauche[3, 1], "Liste des solutions :", halign = :left, padding = (0, 0, 10, 0), fontsize=18, font=:bold)
     #liste_solutions = Menu(layout_gauche[4, 1], options = [""], tellwidth = false)
 
     layout_liste = layout_gauche[4,1] = GridLayout(halign =:left, tellheight=false)
@@ -126,16 +130,16 @@ function creer_interface()
    # boutons de navigation et d'importation/exportation
 
    #bouton dynamique: soit importer x, soit importer xQ/P
-    bouton_import    = Button(grille_bas[1, 1], label = label_bouton_import, height = 45, tellwidth = false)
+    bouton_import    = Button(grille_bas[1, 1], label = label_bouton_import, height = 45, tellwidth = false,font = :bold)
 
     #bouton de lancemenent de l'algorithme
-    bouton_lancer      = Button(grille_bas[1, 2], label = "Lancer", buttoncolor = couleur_bouton_lancer, height = 45, tellwidth = false)
+    bouton_lancer      = Button(grille_bas[1, 2], label = "Lancer", buttoncolor = couleur_bouton_lancer, height = 45, tellwidth = false,font = :bold)
 
     #bouton d'arrêt de l'algo
-    bouton_arreter     = Button(grille_bas[1, 3], label = "Arrêter", buttoncolor = :tomato, height = 45, tellwidth = false)
+    bouton_arreter     = Button(grille_bas[1, 3], label = "Arrêter", buttoncolor = :tomato, height = 45, tellwidth = false,font = :bold)
 
     #bouton d'exportation du dossier contenant xQ et P
-    bouton_telecharger_xQP = Button(grille_bas[1, 4], label = "Télécharger xQ et P", height = 45, tellwidth = false)
+    bouton_telecharger_xQP = Button(grille_bas[1, 4], label = "Télécharger xQ et P", height = 45, tellwidth = false, font = :bold)
 
     # GESTION DE LESPACE
     rowsize!(layout_droite, 1, Relative(1))
@@ -146,7 +150,7 @@ function creer_interface()
     rowgap!(layout_droite, 10)
 
     # Dessin de l'arbre
-   graphplot!(ax, graphe_obs,node_size  = 10,node_color = :blue,edge_color = :gray,arrow_show = false)
+   graphplot!(ax, graphe_obs,layout = _ -> positions_obs[], node_size  = 20,node_color = :blue,edge_color = :gray,arrow_show = false)
    
    # affichage dynamique du pourcentage
    text!(ax, 0, 0,
@@ -156,7 +160,7 @@ function creer_interface()
     offset = (15, 15), 
     fontsize = 24, 
     font = :bold, 
-    color = couleur_pourcent) #si pourcentage <= 5%, il sera affiché en vert sinon en rouge
+    color = couleur_branche)
 
 
     #=============================================================================================
@@ -165,10 +169,13 @@ function creer_interface()
     ========================================================================================#
 
     # met à jour le graphe affiché à chaque modification de l'arbre
-    mis_a_jour_arbre_cb = (arbre) -> mis_a_jour_arbre(graphe_obs, arbre)
+    mis_a_jour_arbre_cb = (arbre) -> mis_a_jour_arbre(graphe_obs, positions_obs, arbre)
 
-    # met à jour le pourcentage affiché
-   mis_a_jour_pourcent_cb = (p) -> mis_a_jour_pourcent(pourcent_obs, p)
+    #met à jour le nombre de branches affiché
+   mis_a_jour_branches_cb = (n) -> begin
+    DEBUG && println("mis_a_jour_branches appelé avec ", n)
+    mis_a_jour_branches(branches_obs, n)
+end
 
     #==============================================================
     EVENEMENTS
@@ -200,12 +207,15 @@ function creer_interface()
 
    # bouton de lancement
    on(bouton_lancer.clicks) do _
-       println("Lancer cliqué, prog_actuelle = ", prog_actuelle[])
-       println("xQ_charge = ", isnothing(xQ_charge[]) ? "nothing" : "chargé")
-       println("P_charge = ", isnothing(P_charge[]) ? "nothing" : "chargé")
+       DEBUG && println("Lancer cliqué, prog_actuelle = ", prog_actuelle[])
+       DEBUG && println("xQ_charge = ", isnothing(xQ_charge[]) ? "nothing" : "chargé")
+       DEBUG && println("P_charge = ", isnothing(P_charge[]) ? "nothing" : "chargé")
        if prog_actuelle[] == 2
         continuer[] = true
-           lancer_animation(ax::Axis,texte_erreur::Ref{Any},xQ_charge, P_charge,est_lance,graphe_obs, pourcent_obs, solution_obs,mis_a_jour_arbre_cb, mis_a_jour_pourcent_cb,joinpath(DOSSIER_DATA, "temp"), continuer)
+        DEBUG && println("Taille de P: ",length(P_charge[]))
+        DEBUG && println("Nombre d'occurence dans P du couple le plus frequent: ",maximum(values(P_charge[])))
+
+           lancer_animation(ax::Axis,texte_erreur::Ref{Any},xQ_charge, P_charge,est_lance,graphe_obs, branches_obs, solution_obs,mis_a_jour_arbre_cb, mis_a_jour_branches_cb,joinpath(DOSSIER_DATA, "temp"), continuer)
        end
    end
 
@@ -221,60 +231,25 @@ end
 
    # --- bouton exporter ---
    on(bouton_exporter.clicks) do x
-    chemin_solutions = solution_obs[]
-    selection = selection_obs[]
-
-    chemins_coches = String[]
-    for i in 1:length(chemin_solutions)
-        if selection[i] == true
-            push!(chemins_coches, chemin_solutions[i])
-        end
-    end
-
-       telecharger_solutions(chemins_coches, length(chemin_solutions))
-   end
-
-   # --- bouton tout sélectionner
-   on(bouton_tout_selectionner.clicks) do x
-       n = length(solution_obs[])
-       if n>0
-       #On met tous les booléens a true: signifie alors que tous les fichiers ont été coché par l'utilisateur
-       selection_obs[] = fill(true, n)
-       println("Toutes les solutions ont été sélectionné")
-       end
+       telecharger_solutions(solution_obs[])
    end
 
 
    #comportement de la liste des solutions
    on(solution_obs) do chemins
     foreach(delete!, contents(layout_liste))
-    selection_obs[] = fill(false, length(chemins))
+    
     for (i, chemins) in enumerate(chemins)
-        nom_fichier = basename(chemins)
-
-        # On crée la case à cocher
-        cb = Checkbox(layout_liste[i, 1], checked = false)
-        Label(layout_liste[i, 2], nom_fichier, halign = :left)
-
-        on(cb.checked) do x
-            selection_obs[][i] = x
-        end
-        
-        # Quand on clique sur la case, on met à jour notre tableau de sélection
-        on(selection_obs) do etat
-            if i<= length(etat)
-            cb.checked[] = etat[i]
-            end
-        end
+        Label(layout_liste[i, 1], basename(chemins), halign = :left)
     end
 end
 
    #========================================================================
      affichage de la fenetre
     ========================================================================#
-    println("OUVERTURE DE L'APPLICATION")
+    DEBUG && println("OUVERTURE DE L'APPLICATION")
     display(figure)
-    
+    wait(display(figure))
 end
 
 
@@ -292,13 +267,13 @@ function lancer_animation(
     P_charge::Ref{Union{Nothing, Dict{Tuple{Int16,Int16}, Int}}},
     est_lance::Observable{Bool},
     graphe_obs::Observable{SimpleDiGraph{Int64}},
-    pourcent_obs::Observable{Float64},
+    branches_obs::Observable{Int},
     solution_obs::Observable{Vector{String}},
     mis_a_jour_arbre::Function,
-    mis_a_jour_pourcent::Function,
+    mis_a_jour_branches::Function,
     dossier::String, continuer
 )
-    println("lancer_animation appelé")
+    DEBUG && println("lancer_animation appelé")
 
 #=
 Initialisation et réinitialisation
@@ -307,7 +282,7 @@ Initialisation et réinitialisation
 
 #Verifie si les donnees sont chargées
     if isnothing(xQ_charge[]) || isnothing(P_charge[])
-        println("Données manquantes")
+        DEBUG && println("Données manquantes")
         return
     end
 
@@ -317,7 +292,7 @@ Initialisation et réinitialisation
         texte_erreur[] = nothing
     end
     graphe_obs[]   = SimpleDiGraph()
-    pourcent_obs[] = 0.0
+    branches_obs[] = 0
     solution_obs[] = String[]
 
     # vide le dossier de stockage des solutions
@@ -333,35 +308,35 @@ Initialisation et réinitialisation
     A l'issue, remet l'état de est_lance à false et liste toutes les solutions trouvées
     ========#
     @async begin
-        println("@async commence")
+        DEBUG && println("@async commence")
         try
             ajouter_solution = (chemin_solution) -> begin
             #ajout de la solution dans liste
             liste = solution_obs[]
             push!(liste, chemin_solution)
             solution_obs[] = liste
-            println("Solution ajoutée: ", basename(chemin_solution))
+            DEBUG && println("Solution ajoutée: ", basename(chemin_solution))
         end
-            println("Avant déquantifier")
+            DEBUG && println("Avant déquantifier")
             dequantifier(
                 xQ_charge[],
                 P_charge[],
                 mis_a_jour_arbre,
-                mis_a_jour_pourcent,
+                mis_a_jour_branches,
                 ajouter_solution,
                 dossier, continuer
             )
         catch e
-            println("ERREUR : ", e)
+            DEBUG && println("ERREUR : ", e)
         finally
             est_lance[] = false
 
             #liste toutes les solutions du dossier
             #solution_obs[] = readdir(dossier, join=true)
-            println("Nombre de solutions stockées: ", length(solution_obs[]))
+            DEBUG && println("Nombre de solutions stockées: ", length(solution_obs[]))
         end
     end
-    println("fin de lancer_animation")
+    DEBUG && println("fin de lancer_animation")
 end
 
 
@@ -372,12 +347,10 @@ end
 
 
 #= Met à jour le pourcentage affiché et la fluidité de l'interface =#
-function mis_a_jour_pourcent(pourcent_obs::Observable, nouveau_pourcent::Float64)
-    println("mis_a_jour_pourcent appelé avec ", nouveau_pourcent)
-    pourcent_obs[] = nouveau_pourcent
-    #=
-    on gère la vitessse de l'animation
-    =#
+function mis_a_jour_branches(branches_obs::Observable, nb_branches::Int)
+    DEBUG && println("mis_a_jour_branches appelé avec ", nb_branches)
+    branches_obs[] = nb_branches
+    #on gère la vitessse de l'animation
     sleep(0.1) 
 end
 
@@ -402,7 +375,7 @@ function telecharger_xQP(dossier_source::String)
     end
     cp(joinpath(dossier_source, "xQ.dat"), joinpath(dossier_xQP, "xQ.dat"), force=true)
     cp(joinpath(dossier_source, "P.ppm"),  joinpath(dossier_xQP, "P.ppm"), force=true)
-    println("Téléchargement de xq et P")
+    DEBUG && println("Téléchargement de xq et P")
 end
 
 #=
@@ -442,7 +415,7 @@ function importer_xQP(
         #Si on ne trouve pas xQ ou P, on affiche une erreur
         if xq=="" || p==""
             affiche_erreur(ax_graphe, "Fichiers xQ et/ou P introuvables.", texte_erreur)
-            println("Erreur: fichiers xQ et/ou P introuvables")
+            DEBUG && println("Erreur: fichiers xQ et/ou P introuvables")
             trouve = false
         end
 
@@ -450,7 +423,7 @@ function importer_xQP(
 
         xQ_charge[] = collect(reinterpret(Int16, read(xq)))
         P_charge[] = lire_p(p)
-        println("Importation du dossier xQ et P")
+        DEBUG && println("Importation du dossier xQ et P")
         end
     end
     return 
@@ -462,91 +435,107 @@ Prend en entrée le vecteur des fichiers selectionnés par l'utilisateur et le n
 Télécharge les solutions sélectionnées dans un dossier choisi par l'utilisateur
 Si plusieurs fichiers, génère une archive ZIP =#
 function telecharger_solutions(
-    solutions_select::Vector{String},
-    total::Int
+    solutions::Vector{String},
 )
 
     dossier_dest = pick_folder()
-    if isempty(solutions_select) || dossier_dest == ""
+    if isempty(solutions) || dossier_dest == ""
         return nothing
     end
 
-    #L'utilisateur a tout sélectionné
-    if length(solutions_select) == total
-        chemin_zip = joinpath(dossier_dest, "solutions.zip")
-        w = ZipFile.Writer(chemin_zip)
-            for chemin in solutions_select
-                f = ZipFile.addfile(w, basename(chemin))
+    chemin_zip = joinpath(dossier_dest, "solutions_trouvees.zip")
+    w = ZipFile.Writer(chemin_zip)
 
-                #copie le fichier dans le zip
-                write(f, read(chemin))
-            end
-            println("Toutes les solutions exportees dans un fichier Zip")
-            close(w)
-    
-    #L'utilisateur n'a pas tout sélectionné
-    else
-        for chemin in solutions_select
-            #copie 
-            cp(chemin, joinpath(dossier_dest, basename(chemin)))
-        end
-        println("Solution[s] selectionnee[s] exportee[s]")
+    for chemin in solutions
+        f = ZipFile.addfile(w, basename(chemin))
+        #copie le fichier dans le zip
+        write(f, read(chemin))
     end
+    close(w)
+    DEBUG && println("Toutes les solutions exportees dans un fichier Zip")
 end
 
 
+#=============================================
+CONSTRUCTION DE L ARBRE MANUELLEMENT
+=================================================#
 
+#Chaque noeud recoit un identifiant unique 
+function indexer_noeuds!(graphe::SimpleDiGraph, noeud::Noeud, indices::Dict{Noeud,Int})
+    #ajout d'un noeud
+    add_vertex!(graphe)
+    indices[noeud] = nv(graphe) #nv(graphe) renvoie le nombre de noeud actuel 
+    for enfant in noeud.enfants
+        indexer_noeuds!(graphe, enfant, indices)
+    end
+end
+
+# Passe 2 : relier les arêtes
+function relier_aretes!(graphe::SimpleDiGraph, noeud::Noeud, indices::Dict{Noeud,Int})
+    for enfant in noeud.enfants
+        add_edge!(graphe, indices[noeud], indices[enfant])
+        relier_aretes!(graphe, enfant, indices)
+    end
+end
+
+#Position de chaque noeud horizontalement
+function calculer_x!(noeud::Noeud, x_pos::Dict{Noeud,Float32}, compteur::Ref{Int})
+    if isempty(noeud.enfants)
+        compteur[] += 1
+        x_pos[noeud] = Float32(compteur[])
+    else
+        for enfant in noeud.enfants
+            calculer_x!(enfant, x_pos, compteur)
+        end
+        x_pos[noeud] = (x_pos[first(noeud.enfants)] + x_pos[last(noeud.enfants)]) / 2
+    end
+end
+
+# Postion verticalement 
+function calculer_profondeur!(noeud::Noeud, profondeurs::Dict{Noeud,Int}, prof::Int)
+    profondeurs[noeud] = prof
+    for enfant in noeud.enfants
+        calculer_profondeur!(enfant, profondeurs, prof + 1)
+    end
+end
 
 #= Convertit notre structure Arbre en SimpleDiGraph pour que GraphMakie puisse le manipuler.
  Parcourt l'arbre en profondeur avec une pile pour éviter un dépassement de mémoire =#
 
-function convertir_arbre(arbre::Arbre) ::SimpleDiGraph
-    #=
-    Initialisation
-        -creation du graphe vide
-        -creation du dictionnaire pour les indices
-        SimpleDiGraph stocke des entiers pour représenter les noeuds.
-        Ce dictionnaire va nous permettre de faire correspondre l'indice avec le noeud
-
-        -creation de la pile avec la racine
-    =#
-
-    graphe = SimpleDiGraph()
-    indices = Dict{Noeud, Int}()
-    pile = [arbre.racine]
+function convertir_arbre(arbre::Arbre)
+    graphe     = SimpleDiGraph()
+    indices    = Dict{Noeud, Int}()
+    x_pos      = Dict{Noeud, Float32}()
+    profondeurs = Dict{Noeud, Int}()
+    compteur   = Ref(0)
 
 
-    #=
-    Parcourt de l'arbre en profondeur
-    =#
-    while !isempty(pile)
-        noeud = pop!(pile)
+    indexer_noeuds!(graphe, arbre.racine, indices)
+    relier_aretes!(graphe, arbre.racine, indices)
+    calculer_x!(arbre.racine, x_pos, compteur)
+    calculer_profondeur!(arbre.racine, profondeurs, 0)
 
-        # on ajoute un sommet pour ce noeud et on mémorise son indice
-        add_vertex!(graphe)
-        indices[noeud] = nv(graphe) #la fonction nv() nous donne l'indice du sommet ajouté
+    positions = Vector{Point2f}(undef, nv(graphe))
 
-        # on relie ce noeud à son parent s'il en possède un
-        if noeud.parent !== nothing
-            add_edge!(graphe, indices[noeud.parent], indices[noeud]) #création d'une arête
-        end
-
-        # on finit par empiler les enfants
-        for enfant in reverse(noeud.enfants)
-            push!(pile, enfant)
-        end
+    #on place chaque noeud à sa position (x,y)
+    for (noeud, i) in indices
+        positions[i] = Point2f(x_pos[noeud], -Float32(profondeurs[noeud]))
     end
 
-    return graphe
+    return graphe, positions
 end
 
-
-#= Met à jour le graphe affiché à chaque modification de l'arbre
-et convertit la structure Arbre en SimpleDiGraph pour GraphMakie =#
-function mis_a_jour_arbre(graphe_obs::Observable, arbre::Arbre)
-    println("Entree dans mis_a_jour_arbre")
-    graphe_obs[] = convertir_arbre(arbre)
-    println("Fin de mis_a_jour_arbre")
+function mis_a_jour_arbre(graphe_obs::Observable, positions_obs::Observable, arbre::Arbre)
+    g, pos = convertir_arbre(arbre)
+    if nv(g) == 0
+        #On place un noeud "fantome": GraphMakie ne sais pas construire un graphe à partir de "rien"
+        graphe_obs[]    = SimpleDiGraph(1)
+        positions_obs[] = [Point2f(0.5, 0.0)]
+    else
+        #On met à jour les positions et le graphe
+        positions_obs[] = pos
+        graphe_obs[]    = g 
+    end
 end
 
 #= Affiche un message d'erreur à l'emplacement du graphe. =#
@@ -602,14 +591,14 @@ function importer_fichier(ax_graphe::Axis, texte_erreur::Ref{Any})::Vector{Int16
     #Traitement du cas où le fichier est vide
     if isempty(serie)
         affiche_erreur(ax_graphe, "Fichier vide.", texte_erreur)
-        println("Fichier vide")
+        DEBUG && println("Fichier vide")
         return Int16[]
     end
 
     #Traitement du cas où le fichier ne possède pas asseez de données
     if length(serie) < 2
         affiche_erreur(ax_graphe, "Fichier contenant moins de deux valeurs", texte_erreur)
-        println("Fichier contenant moins de deux valeurs")
+        DEBUG && println("Fichier contenant moins de deux valeurs")
         return Int16[]
     end
 

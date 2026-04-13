@@ -10,20 +10,17 @@
 # ------------------------------------------------------------
 
 function lire_serie(chemin::String)::Vector{Int16}
-    # vérifie que le fichier existe
     if !isfile(chemin)
         error("Fichier introuvable")
     end
 
-    # lit le fichier ligne par ligne et convertit en Int16
-    lignes = readlines(chemin)
+    vecteur = reinterpret(Int16, read(chemin))
 
-    # vérifie que le fichier n'est pas vide
-    if isempty(lignes)
+    if isempty(vecteur)
         error("Le fichier est vide")
     end
 
-    return parse.(Int16, lignes)
+    return collect(vecteur)
 end
 
 
@@ -50,9 +47,7 @@ end
 
 function sauvegarder_xq(xQ::Vector{Int16}, chemin::String)
     open(chemin, "w") do f
-        for n in xQ
-            println(f, n)
-        end
+        write(f, xQ)
     end
 end
 

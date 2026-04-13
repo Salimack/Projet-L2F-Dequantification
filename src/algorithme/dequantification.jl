@@ -4,17 +4,15 @@ on construit un arbre binaire et on elague les branches impossibles au fur et a 
 ================================================================#
 include("arbre.jl")
 
-const DEBUG = false
+const DEBUG = true
 
 # verifie si le couple (noeud.valeur, valeur) est autorise par P
 # on regarde dans lhistogramme du noeud si le couple existe et si son compteur est > 0
 # si le couple n'est pas dans P du tout ca retourne false aussi
 function est_compatible(noeud::Noeud, valeur::Int16)::Bool
-    DEBUG && println("Vérification si parent=", noeud.valeur, " et enfant=", valeur, " sont compatibles")
-
-    if haskey(noeud.histogramme, (noeud.valeur, valeur))
-        DEBUG && println("Histogramme équivalent avec le noeud")
-        return noeud.histogramme[(noeud.valeur, valeur)] > 0
+    couple = (noeud.valeur, valeur)
+    if haskey(noeud.histogramme, couple)
+        return noeud.histogramme[couple] > 0
     end
     DEBUG && println("Histogramme non équivalent avec le noeud")
     return false
@@ -45,14 +43,23 @@ end
 # si apres suppression le parent devient feuille lui aussi on le vire aussi
 # sauf si le parent est directement sous la racine (parent.parent === nothing) la on arrete
 function elaguer!(arbre::Arbre, n::Noeud)
+    if n.parent === nothing
+        return
+    end
     supprimer_noeud!(arbre, n.parent, n)
+    if est_feuille(n.parent)
+        elaguer!(arbre, n.parent)
+    end
+end
 
+    
+    #=supprimer_noeud!(arbre, n.parent, n)
     if n.parent.parent !== nothing && est_feuille(n.parent)
         elaguer!(arbre, n.parent)
     end
 
-    return nothing
-end
+    return nothing=#
+#end
 
 
 #=coeur de lalgo cest un DFS (parcours en profondeur) recursif
@@ -67,9 +74,8 @@ function developper(
     xQ::Vector{Int16},
     niveau::Int,
     mis_a_jour_arbre::Function,
-    mis_a_jour_pourcent::Function,
+    mis_a_jour_branches::Function,
     ajouter_solution::Function,
-    max_feuille::Ref{Int},
     chemin::String,
     compteur_solutions::Ref{Int},
     est_lance::Ref{Bool})::Nothing
@@ -84,14 +90,6 @@ function developper(
         chemin_solution = sauvegarder_solution(solution, chemin, compteur_solutions)
         ajouter_solution(chemin_solution)
     else
-        if arbre.nb_branche > max_feuille[]
-            max_feuille[] = arbre.nb_branche
-        end
-
-        if max_feuille[] > 0
-            pourcentage = (compter_branches(arbre.racine) / max_feuille[]) * 100.0
-            mis_a_jour_pourcent(pourcentage)
-        end
 
         xQn = xQ[niveau]
         valeurs_possibles = [xQn, xQn + Int16(1)]
@@ -110,14 +108,12 @@ function developper(
 
                 enfant = ajouter_enfant!(arbre, noeud, valeur, valeur % 2 != 0, P_copie)
 
-                if arbre.nb_branche > max_feuille[]
-                    max_feuille[] = arbre.nb_branche
-                end
 
                 valide += 1
                 mis_a_jour_arbre(arbre)
+                mis_a_jour_branches(compter_branches(arbre.racine))
 
-                developper(arbre, enfant, xQ, niveau + 1, mis_a_jour_arbre, mis_a_jour_pourcent, ajouter_solution, max_feuille, chemin, compteur_solutions, est_lance)
+                developper(arbre, enfant, xQ, niveau + 1, mis_a_jour_arbre, mis_a_jour_branches, ajouter_solution, chemin, compteur_solutions, est_lance)
             end
         end
 
@@ -127,8 +123,7 @@ function developper(
             if niveau <= length(xQ)
                 DEBUG && println("ELAGAGE noeud=", noeud.valeur, " parent=", noeud.parent.valeur)
                 elaguer!(arbre, noeud)
-                pourcentage = compter_branches(arbre.racine) / max_feuille[] * 100
-                mis_a_jour_pourcent(pourcentage)
+                mis_a_jour_branches(compter_branches(arbre.racine))
             end
         end
 
@@ -142,7 +137,7 @@ function dequantifier(
     xQ::Vector{Int16},
     P::Dict{Tuple{Int16, Int16}, Int},
     mis_a_jour_arbre::Function,
-    mis_a_jour_pourcent::Function,
+    mis_a_jour_branches::Function,
     ajouter_solution::Function,
     chemin::String,
     est_lance::Ref{Bool})
@@ -151,31 +146,29 @@ function dequantifier(
     DEBUG && println("Taille de xQ : ", length(xQ))
 
     arbre = creer_arbre()
+    DEBUG && println("xQ[1] = ", xQ[1], " enfant_gauche = ", xQ[1], " enfant_droit = ", xQ[1] + Int16(1))
     DEBUG && println("arbre cree")
 
     compteur_solutions = Ref{Int}(0)
-    max_feuille = Ref{Int}(0)
 
     arbre.racine = Noeud(Int16(0), nothing, false, Noeud[], nothing)
 
     enfant_gauche = ajouter_enfant!(arbre, arbre.racine, xQ[1], false, copy(P))
     enfant_droit  = ajouter_enfant!(arbre, arbre.racine, xQ[1] + Int16(1), true, copy(P))
 
-    max_feuille[] = arbre.nb_branche
     mis_a_jour_arbre(arbre)
 
-    developper(arbre, enfant_gauche, xQ, 2, mis_a_jour_arbre, mis_a_jour_pourcent, ajouter_solution, max_feuille, chemin, compteur_solutions, est_lance)
+    developper(arbre, enfant_gauche, xQ, 2, mis_a_jour_arbre, mis_a_jour_branches, ajouter_solution, chemin, compteur_solutions, est_lance)
 
     if !est_lance[]
         return
     end
 
-    developper(arbre, enfant_droit, xQ, 2, mis_a_jour_arbre, mis_a_jour_pourcent, ajouter_solution, max_feuille, chemin, compteur_solutions, est_lance)
+    developper(arbre, enfant_droit, xQ, 2, mis_a_jour_arbre, mis_a_jour_branches, ajouter_solution, chemin, compteur_solutions, est_lance)
 
-    pourcentage = compter_branches(arbre.racine) / max_feuille[] * 100
-    mis_a_jour_pourcent(pourcentage)
-
+    mis_a_jour_branches(compter_branches(arbre.racine))
     DEBUG && println("==Fin de déquantifier")
-    DEBUG && println("Nombre maximal de branches observé: ", max_feuille[])
-    DEBUG && println("Nombre total de solutions trouvées: ", compteur_solutions[])
+    DEBUG && println("Taille de xQ : ", length(xQ))
+    DEBUG && println("nb_branche final : ", arbre.nb_branche)
+    DEBUG && println("total_branches : ", arbre.total_branche)
 end

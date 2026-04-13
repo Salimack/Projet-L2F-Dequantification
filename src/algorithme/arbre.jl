@@ -14,6 +14,7 @@ end
 mutable struct Arbre
     racine :: Union{Nothing, Noeud}
     nb_branche :: Int
+    total_branche::Int
 end
 
 
@@ -22,7 +23,7 @@ end
 
 function creer_arbre()::Arbre
     racine = Noeud(Int16(0), nothing, false, Noeud[], nothing)
-    return Arbre(racine, 0)
+    return Arbre(racine, 0,0)
 end
 
     function creer_noeud(
@@ -54,6 +55,7 @@ function ajouter_enfant!(
     enfant = creer_noeud(valeur, parent, pos, P)
     push!(parent.enfants, enfant)
     arbre.nb_branche += 1
+    arbre.total_branche += 1
     return enfant
 end
 

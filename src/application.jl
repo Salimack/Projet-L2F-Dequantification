@@ -9,5 +9,4 @@ include("algorithme/construction.jl")
 include("algorithme/dequantification.jl")
 include("interface.jl")
 
-
 creer_interface()

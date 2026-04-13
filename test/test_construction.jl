@@ -8,21 +8,19 @@ include("../src/algorithme/construction.jl")
 
 # ------ lire_serie ------
 @testset "lire_serie" begin
-    # on crée un fichier temporaire avec des valeurs binaires Int16
     chemin_tmp = tempname()
     open(chemin_tmp, "w") do f
-        println(f, 2)
-        println(f, 4)
-        println(f, 7)
+        write(f, Int16(2))
+        write(f, Int16(4))
+        write(f, Int16(7))
     end
 
     x = lire_serie(chemin_tmp)
-    @test x == Int16[2, 4, 7]       # les valeurs sont bien lues
-    @test eltype(x) == Int16        # le type est bien Int16
+    @test x == Int16[2, 4, 7]
+    @test eltype(x) == Int16
 
     rm(chemin_tmp)
 
-    # fichier inexistant
     @test_throws Exception lire_serie("fichier_qui_nexiste_pas.txt")
 end
 
@@ -60,7 +58,7 @@ end
     sauvegarder_xq(xQ, chemin_tmp)
     xQ_relu = lire_serie(chemin_tmp)
 
-    @test xQ_relu == xQ    # ce qu'on a écrit = ce qu'on relit
+    @test xQ_relu == xQ
 
     rm(chemin_tmp)
 end

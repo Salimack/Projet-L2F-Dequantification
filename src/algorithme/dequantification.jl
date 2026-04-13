@@ -47,9 +47,6 @@ function elaguer!(arbre::Arbre, n::Noeud)
         return
     end
     supprimer_noeud!(arbre, n.parent, n)
-    if est_feuille(n.parent)
-        elaguer!(arbre, n.parent)
-    end
 end
 
     
@@ -85,17 +82,13 @@ function developper(
     end
 
     if niveau == length(xQ) + 1
-        DEBUG && println("[SOLUTION TROUVEE AU NIVEAU ", niveau, "]")
         solution = extraire_serie(noeud)
         chemin_solution = sauvegarder_solution(solution, chemin, compteur_solutions)
         ajouter_solution(chemin_solution)
+        mis_a_jour_branches(compteur_solutions[])
     else
-
         xQn = xQ[niveau]
         valeurs_possibles = [xQn, xQn + Int16(1)]
-        valide = 0
-
-        DEBUG && println("[NIVEAU ", niveau, "] valeur noeud=", noeud.valeur, " | candidats=", valeurs_possibles)
 
         for valeur in valeurs_possibles
             if !est_lance[]
@@ -105,30 +98,15 @@ function developper(
             if est_compatible(noeud, valeur)
                 P_copie = copy(noeud.histogramme)
                 P_copie[(noeud.valeur, valeur)] -= 1
-
                 enfant = ajouter_enfant!(arbre, noeud, valeur, valeur % 2 != 0, P_copie)
-
-
-                valide += 1
                 mis_a_jour_arbre(arbre)
-                mis_a_jour_branches(compter_branches(arbre.racine))
-
                 developper(arbre, enfant, xQ, niveau + 1, mis_a_jour_arbre, mis_a_jour_branches, ajouter_solution, chemin, compteur_solutions, est_lance)
             end
         end
 
         noeud.histogramme = nothing
-
-        if valide == 0 || isempty(noeud.enfants)
-            if niveau <= length(xQ)
-                DEBUG && println("ELAGAGE noeud=", noeud.valeur, " parent=", noeud.parent.valeur)
-                elaguer!(arbre, noeud)
-                mis_a_jour_branches(compter_branches(arbre.racine))
-            end
-        end
-
-        mis_a_jour_arbre(arbre)
     end
+
     return nothing
 end
 

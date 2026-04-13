@@ -46,8 +46,6 @@ end
 
 # ------ elaguer! ------
 @testset "elaguer!" begin
-    # arbre : racine(0) -> e1(2) -> e2(4)
-    # si on elague e2, e1 devient feuille sans parent valide -> e1 aussi elague
     arbre = creer_arbre()
 
     P = Dict{Tuple{Int16,Int16},Int}((Int16(0), Int16(2)) => 1, (Int16(2), Int16(4)) => 1)
@@ -58,9 +56,9 @@ end
 
     elaguer!(arbre, e2)
 
-    # e2 supprime, e1 devient feuille et se fait elaguer aussi
-    @test arbre.nb_branche == 0
-    @test isempty(arbre.racine.enfants)
+    # on supprime juste e2, e1 reste (le DFS s'en occupera)
+    @test arbre.nb_branche == 1
+    @test length(e1.enfants) == 0
 end
 
 @testset "elaguer! garde le frere" begin
@@ -75,7 +73,6 @@ end
 
     elaguer!(arbre, e2)
 
-    # e2 supprime mais e1 a encore e3 donc e1 reste
     @test arbre.nb_branche == 2
     @test length(e1.enfants) == 1
     @test e1.enfants[1].valeur == Int16(5)

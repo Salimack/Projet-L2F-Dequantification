@@ -27,8 +27,8 @@ function creer_interface()
     - GLMakie.activate() - initialise la fenetre, on force la fenetre a se placer en premier plan à l'ouverture
     Défintion de la taille de la fenetre et des marges de sécurité
     ===========================================# 
-    GLMakie.activate!(title = "Projet de déquantification",focus_on_show  = true)
-    figure = Figure(size = (1200, 500), figure_padding = 60, backgroundcolor = :lightblue)
+    GLMakie.activate!(title = "L2F2 — Déquantification", focus_on_show = true)
+    figure = Figure(size = (1300, 660), figure_padding = 30, backgroundcolor = RGBf(0.10, 0.11, 0.14))
 
     #réinitialisation du dossier temp qui contiendra les solutions trouvées par l'algorithme
     mkpath(joinpath(DOSSIER_DATA, "temp"))
@@ -104,24 +104,27 @@ function creer_interface()
     
     #sous-grille pour aligner les boutons
     layout_boutons_import = layout_gauche[2, 1] = GridLayout()
-    bouton_exporter = Button(layout_boutons_import[1, 1], label = "Exporter les solutions", height = 40, tellwidth = false)
+    bouton_exporter = Button(layout_boutons_import[1, 1], label = "Exporter les solutions", height = 38, tellwidth = false, buttoncolor = RGBf(0.22, 0.52, 0.95), labelcolor = :white, font = :bold, strokewidth = 0)
     
     colgap!(layout_boutons_import, 100) #espace entre les boutons pour la clarté
     
     #Les solutions
-    Label(layout_gauche[3, 1], "Liste des solutions :", halign = :left, padding = (0, 0, 10, 0), fontsize=18, font=:bold)
+    Label(layout_gauche[3, 1], "Liste des solutions :", halign = :left, padding = (0, 0, 10, 0), fontsize=13, font=:bold, color = RGBf(0.55, 0.58, 0.65))
     #liste_solutions = Menu(layout_gauche[4, 1], options = [""], tellwidth = false)
 
-    layout_liste = layout_gauche[4,1] = GridLayout(halign =:left, tellheight=false)
-
-
-    #Box invisible pour pousser tout le contenu vers le haut
-    layout_gauche[5, 1] = Box(figure, visible = false) 
-    rowsize!(layout_gauche, 5, Relative(1)) 
+    ax_liste = Axis(layout_gauche[4, 1],
+        backgroundcolor = RGBf(0.10, 0.11, 0.14),
+        xgridvisible = false, ygridvisible = false
+    )
+    hidedecorations!(ax_liste)
+    hidespines!(ax_liste)
+    rowsize!(layout_gauche, 4, Relative(1))
+    scroll_offset = Ref{Int}(0)
+    MAX_VIS = 16 
 
     #COLONNE DROITE
    layout_droite = figure[1, 2] = GridLayout()
-   ax = Axis(layout_droite[1, 1], title = "Déquantification", titlesize=30,alignmode = Outside(10)) #zone de dessin
+   ax = Axis(layout_droite[1, 1], title = "Déquantification", titlesize=24, titlecolor = RGBf(0.88, 0.90, 0.95), backgroundcolor = RGBf(0.08, 0.09, 0.11), alignmode = Outside(10)) #zone de dessin
    hidedecorations!(ax) # On supprime les axes et les coordonnées
 
    #Les boutons en dessous de l'axis (zone de dessin)
@@ -130,16 +133,16 @@ function creer_interface()
    # boutons de navigation et d'importation/exportation
 
    #bouton dynamique: soit importer x, soit importer xQ/P
-    bouton_import    = Button(grille_bas[1, 1], label = label_bouton_import, height = 45, tellwidth = false,font = :bold)
+    bouton_import = Button(grille_bas[1, 1], label = label_bouton_import, height = 42, tellwidth = false, font = :bold, buttoncolor = RGBf(0.20, 0.22, 0.28), labelcolor = RGBf(0.88, 0.90, 0.95), strokewidth = 0)
 
     #bouton de lancemenent de l'algorithme
-    bouton_lancer      = Button(grille_bas[1, 2], label = "Lancer", buttoncolor = couleur_bouton_lancer, height = 45, tellwidth = false,font = :bold)
+    bouton_lancer = Button(grille_bas[1, 2], label = "Lancer", buttoncolor = couleur_bouton_lancer, height = 42, tellwidth = false, font = :bold, labelcolor = :white, strokewidth = 0)
 
     #bouton d'arrêt de l'algo
-    bouton_arreter     = Button(grille_bas[1, 3], label = "Arrêter", buttoncolor = :tomato, height = 45, tellwidth = false,font = :bold)
+    bouton_arreter = Button(grille_bas[1, 3], label = "Arrêter", buttoncolor = RGBf(0.88, 0.28, 0.22), height = 42, tellwidth = false, font = :bold, labelcolor = :white, strokewidth = 0)
 
     #bouton d'exportation du dossier contenant xQ et P
-    bouton_telecharger_xQP = Button(grille_bas[1, 4], label = "Télécharger xQ et P", height = 45, tellwidth = false, font = :bold)
+    bouton_telecharger_xQP = Button(grille_bas[1, 4], label = "Télécharger xQ et P", height = 42, tellwidth = false, font = :bold, buttoncolor = RGBf(0.20, 0.22, 0.28), labelcolor = RGBf(0.88, 0.90, 0.95), strokewidth = 0)
 
     # GESTION DE LESPACE
     rowsize!(layout_droite, 1, Relative(1))
@@ -150,7 +153,7 @@ function creer_interface()
     rowgap!(layout_droite, 10)
 
     # Dessin de l'arbre
-   graphplot!(ax, graphe_obs,layout = _ -> positions_obs[], node_size  = 20,node_color = :blue,edge_color = :gray,arrow_show = false)
+   graphplot!(ax, graphe_obs, layout = _ -> positions_obs[], node_size = 12, node_color = RGBf(0.22, 0.52, 0.95), edge_color = RGBf(0.30, 0.33, 0.40), arrow_show = false)
    
    # affichage dynamique du pourcentage
    text!(ax, 0, 0,
@@ -235,14 +238,23 @@ end
    end
 
 
-   #comportement de la liste des solutions
+   # liste des solutions dessinée dans ax_liste avec scroll automatique
    on(solution_obs) do chemins
-    foreach(delete!, contents(layout_liste))
-    
-    for (i, chemins) in enumerate(chemins)
-        Label(layout_liste[i, 1], basename(chemins), halign = :left)
-    end
-end
+       empty!(ax_liste.scene.plots)
+       n = length(chemins)
+       if n == 0; return; end
+       scroll_offset[] = max(0, n - MAX_VIS)
+       debut = scroll_offset[] + 1
+       fin   = min(n, scroll_offset[] + MAX_VIS)
+       ylims!(ax_liste, 0, MAX_VIS)
+       xlims!(ax_liste, 0, 1)
+       for (j, chemin) in enumerate(chemins[debut:fin])
+           y = MAX_VIS - j
+           bg = j % 2 == 0 ? RGBf(0.15, 0.17, 0.20) : RGBf(0.12, 0.13, 0.16)
+           poly!(ax_liste, Point2f[(0,y),(1,y),(1,y+1),(0,y+1)], color=bg, strokewidth=0)
+           text!(ax_liste, 0.04, y+0.25, text=basename(chemin), fontsize=12, color=RGBf(0.88,0.90,0.95), space=:data)
+       end
+   end
 
    #========================================================================
      affichage de la fenetre

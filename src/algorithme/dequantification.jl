@@ -5,7 +5,7 @@ on construit un arbre binaire et on elague les branches impossibles au fur et a 
 include("arbre.jl")
 
 
-
+# verifie si le couple (noeud.valeur, valeur) est dans P et si son compte est > 0
 function est_compatible(noeud::Noeud, valeur::Int16)::Bool
     couple = (noeud.valeur, valeur)
     if haskey(noeud.histogramme, couple)
@@ -15,20 +15,20 @@ function est_compatible(noeud::Noeud, valeur::Int16)::Bool
 end
 
 
+# construit le nom du fichier solution et lecrit en binaire
 function sauvegarder_solution(solution::Vector{Int16}, chemin_dossier::String, compteur_solutions::Ref{Int})
     compteur_solutions[] += 1
     numero = string(compteur_solutions[])
     nom_fichier = "solution_" * numero * ".dat"
     chemin_fichier = joinpath(chemin_dossier, nom_fichier)
     open(chemin_fichier, "w") do fichier
-        for v in solution
-            println(fichier, v)
-        end
+        write(fichier, solution)
     end
     return chemin_fichier
 end
 
 
+# elague le noeud sans remonter
 function elaguer!(arbre::Arbre, n::Noeud)
     if n.parent === nothing
         return
@@ -37,6 +37,8 @@ function elaguer!(arbre::Arbre, n::Noeud)
 end
 
 
+# parcours en profondeur sans elagage pendant le DFS
+# on garde juste les branches qui arrivent au bout
 function developper(
     arbre::Arbre,
     noeud::Noeud,
@@ -75,24 +77,18 @@ function developper(
                 P_copie[(noeud.valeur, valeur)] -= 1
                 enfant = ajouter_enfant!(arbre, noeud, valeur, valeur % 2 != 0, P_copie)
                 mis_a_jour_arbre(arbre)
-
                 developper(arbre, enfant, xQ, niveau + 1, mis_a_jour_arbre, mis_a_jour_branches, mis_a_jour_progression, ajouter_solution, chemin, compteur_solutions, est_lance)
-
-                # apres la recursion : si l'enfant est une feuille sterile on l'elague
-                if est_feuille(enfant) && niveau < length(xQ)
-                    elaguer!(arbre, enfant)
-                end
             end
         end
 
         noeud.histogramme = nothing
-        mis_a_jour_arbre(arbre)
     end
 
     return nothing
 end
 
 
+# point dentree : cree larbre et lance le DFS sur les deux fils de la racine
 function dequantifier(
     xQ::Vector{Int16},
     P::Dict{Tuple{Int16, Int16}, Int},
@@ -120,8 +116,4 @@ function dequantifier(
     end
 
     developper(arbre, enfant_droit, xQ, 2, mis_a_jour_arbre, mis_a_jour_branches, mis_a_jour_progression, ajouter_solution, chemin, compteur_solutions, est_lance)
-
-    mis_a_jour_branches(compter_branches(arbre.racine))
-    DEBUG && println("==Fin de déquantifier")
-    DEBUG && println("Nombre total de solutions trouvées: ", compteur_solutions[])
 end

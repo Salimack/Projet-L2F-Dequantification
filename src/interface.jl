@@ -227,13 +227,14 @@ function lancer_animation(
             DEBUG && println("Avant déquantifier")
             dequantifier(
                 xQ_charge[],
-                P_charge[],
-                mis_a_jour_arbre,
-                mis_a_jour_branches,
-                mis_a_jour_progression,
-                ajouter_solution,
-                dossier, continuer
-            )
+            P_charge[],
+            mis_a_jour_arbre,
+            mis_a_jour_branches,
+            mis_a_jour_progression,
+            ajouter_solution,
+            dossier,
+            continuer
+        )
         catch e
             DEBUG && println("ERREUR : ", e)
         finally

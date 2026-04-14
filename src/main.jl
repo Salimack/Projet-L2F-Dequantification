@@ -1,2 +1,0 @@
-println("Julia fonctionne correctement")
-

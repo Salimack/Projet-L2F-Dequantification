@@ -1,0 +1,3 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+L2F2_Dequantification_App = "4dcdeae6-8727-46cb-b2e5-634683e5604d"

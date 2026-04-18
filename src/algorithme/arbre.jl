@@ -1,92 +1,178 @@
-#========================================
-Ce module définit les structures Noeud et Arbre ainsi que les fonctions associées
-===========================================#
+    #========================================
+    Ce module définit les structures Noeud et Arbre ainsi que les fonctions associées
+    ===========================================#
 
 
-mutable struct Noeud
-    valeur::Int16
-    parent :: Union{Nothing, Noeud}
-    pos::Bool # false = pair (fils bas) true = impair (fils haut)
-    enfants::Vector{Noeud}
-    histogramme:: Union{Nothing, Dict{Tuple{Int16, Int16}, Int}} #l'histogramme de la racine est Nothing
-end
+    """
+        mutable struct Noeud
 
-mutable struct Arbre
-    racine :: Union{Nothing, Noeud}
-    nb_branche :: Int
-    total_branche::Int
-end
+    Représente un nœud de l’arbre avec un histogramme associé.
+
+    #Champs:
+    - valeur = valeur associé au noeud
+    - parent = le parent du noeud
+    - pos = indique si pair ou impair
+    - enfants = liste des fils du noeud
+    - histogramme = dictionnaire P associé
+
+    Notez que l'histogramme de la racine est de type Nothing
+
+    """
+    mutable struct Noeud
+        valeur::Int16
+        parent :: Union{Nothing, Noeud}
+        pos::Bool # false = pair (fils bas) true = impair (fils haut)
+        enfants::Vector{Noeud}
+        histogramme:: Union{Nothing, Dict{Tuple{Int16, Int16}, Int}} #l'histogramme de la racine est Nothing
+    end
+    
+
+    """
+        mutable stuct Arbre
+
+    Représente l'arbre binaire de déquantification.
+
+    # Champs
+    - racine : La racine de l'arbre.
+    """
+    mutable struct Arbre
+        racine :: Union{Nothing, Noeud}
+    end
 
 
-# cree un noeud avec la valeur, le compteur P et la position
-# exemple : creer_noeud(4, 3, false) -> noeud avec valeur=4, histogramme=3, pos=false, enfants=[]
 
-function creer_arbre()::Arbre
-    racine = Noeud(Int16(0), nothing, false, Noeud[], nothing)
-    return Arbre(racine, 0,0)
-end
+    """
+        creer_arbre()::Arbre
 
+    Crée un arbre vide
+    """
+    function creer_arbre()::Arbre
+        racine = Noeud(Int16(0), nothing, false, Noeud[], nothing)
+        return Arbre(racine)
+    end
+
+
+    """
+        creer_noeud(Int16 x Nœud x Bool x Dict ) :: Noeud
+
+    Crée un nouveau noeud dans l'arbre.
+
+    # Paramètres:
+    - valeur = valeur du noeud
+    - parent = noeud parent
+    - pos = indique si le noeud est de type pair ou impair
+    - histogramme = copie indépendante de l'histogramme
+    """
     function creer_noeud(
-        valeur::Int16,
-        parent ::Union{Nothing, Noeud},
-        pos::Bool,
-        histogramme::Dict{Tuple{Int16, Int16}, Int}
-        )::Noeud
+            valeur::Int16,
+            parent ::Union{Nothing, Noeud},
+            pos::Bool,
+            histogramme::Dict{Tuple{Int16, Int16}, Int}
+            )::Noeud
 
         return Noeud(valeur,parent,pos,Noeud[], copy(histogramme))
     end
 
 
-# retourne true si le noeud na pas denfants
-# exemple : est_feuille(creer_noeud(4, 3, false)) -> true
-function est_feuille(noeud::Noeud)
-    return isempty(noeud.enfants)
-end
+    """
+        est_feuille(Noeud)::Bool
 
-# cree un enfant et lajoute au parent, modifie le parent directement
-# exemple : ajouter_enfant!(parent, 3, 2, true) -> cree Noeud(3,2,true) et lajoute a parent.enfants
-function ajouter_enfant!(
-    arbre::Arbre,
-    parent::Noeud,
-    valeur::Int16,
-    pos::Bool,
-    P::Dict{Tuple{Int16,Int16}, Int})::Noeud
+    Retourne true si le noeud n'a pas d'enfant, false sinon.
 
-    enfant = creer_noeud(valeur, parent, pos, P)
-    push!(parent.enfants, enfant)
-    arbre.nb_branche += 1
-    arbre.total_branche += 1
-    return enfant
-end
-
-# supprime un noeud de la liste denfants de son parent
-# sert a elaguer quand une branche est impossible
-# exemple : supprimer_noeud!(parent, e1) -> enleve e1 de parent.enfants
-function supprimer_noeud!(
-    arbre::Arbre,
-    parent::Noeud,
-    noeud::Noeud)
-
-    filter!(enfant -> enfant !== noeud, parent.enfants)
-    arbre.nb_branche -= 1
-end
-
-# compte le nombre de feuilles dans larbre, fonctionne par recursion
-# exemple : si larbre a 3 feuilles -> retourne 3
-function compter_branches(n::Noeud)
-    if est_feuille(n)
-        return 1
+    # Paramètres:
+    - noeud
+    
+    """
+    function est_feuille(noeud::Noeud)
+        return isempty(noeud.enfants)
     end
-    total = 0
-    for enfant in n.enfants
-        total += compter_branches(enfant)
-    end
-    return total
-end
 
-    # retourne une copie independante de la sequence
-    # sans copy() si on modifie loriginal ca modifie aussi le resultat
-    # exemple : extraire_serie([2,3,4,5]) -> [2,3,4,5]
+
+    """
+        ajouter_enfant!(Arbre x Nœud x Int16 x Boolx Dict{Tuple{Int16, Int16}, Int}} ) :: Noeud
+
+    Ajoute un enfant à l'arbre grâce à creer_noeud.
+
+    # Paramètres:
+    - Arbre
+    - Noeud
+    - valeur
+    - pos
+    - P, le dictionnaire
+    """
+    function ajouter_enfant!(
+        arbre::Arbre,
+        parent::Noeud,
+        valeur::Int16,
+        pos::Bool,
+        P::Dict{Tuple{Int16,Int16}, Int})::Noeud
+
+        enfant = creer_noeud(valeur, parent, pos, P)
+        push!(parent.enfants, enfant)
+        return enfant
+    end
+
+  
+
+    """
+        supprimer_noeud(Arbre x Nœud x Noeud ):: Noeud
+
+    Supprime un noeud de la liste d'enfants de son parent.
+
+    Sert à élaguer quand une branche est impossible.
+
+    # Paramètres:
+    - arbre
+    - parent
+    - noeud
+
+    Exemple: supprimer_noeud!(arbre, parent, e1) -> enlève e1 de parent.enfants
+    """
+    function supprimer_noeud!(
+        arbre::Arbre,
+        parent::Noeud,
+        noeud::Noeud)
+
+        filter!(enfant -> enfant !== noeud, parent.enfants)
+    end
+
+
+    """
+        compter_branches(noeud)::Int
+
+    Compte le nombre de feuille dans l'arbre.
+
+    Fonctionne par récursion
+
+    # Paramètres:
+    - noeud
+
+    Exemple: si l'arbre a 3 feuilles -> retourne 3.
+    """
+    function compter_branches(n::Noeud)
+        if est_feuille(n)
+            return 1
+        end
+        total = 0
+        for enfant in n.enfants
+            total += compter_branches(enfant)
+        end
+        return total
+    end
+
+ 
+    """
+        extraire_serie(Noeud)::Vector{Int16}
+
+    La fonction extrait la branche en la parcourant du nœud passé en paramètre à la racine.
+    
+    Retourne la branche dans le bon sens (racine -> nœud)
+
+    # Paramètres:
+    - Noeud
+
+    Exemple: extraire_serie([2,3,4,5]) -> [2,3,4,5]
+    """
     function extraire_serie(n::Noeud)::Vector{Int16}
         sequence = Vector{Int16}()
         noeud = n

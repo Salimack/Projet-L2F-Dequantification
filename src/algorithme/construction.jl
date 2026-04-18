@@ -1,20 +1,26 @@
-# ============================================================
-# construction.jl
-# Rôle : À partir de x.txt, génère xQ et P
-#        et les sauvegarde dans le dossier data
-# ============================================================
+#============================================================
+Ce module à pour rôle de générer xQ et P à partir de x.txt puis de les sauvegarder dans le dossier data
+============================================================#
 
 
-# ------------------------------------------------------------
-# FONCTIONS
-# ------------------------------------------------------------
 
+"""
+    lire_serie(String)::Vector{Int16}
+
+Prend en entrée le chemin de x et stock les données dans un vecteur.
+
+Vérifie si le fichier est vide.
+
+# Paramètres:
+- chemin
+"""
 function lire_serie(chemin::String)::Vector{Int16}
     if !isfile(chemin)
         error("Fichier introuvable")
     end
 
-    vecteur = reinterpret(Int16, read(chemin))
+    #sans reinterpret, on lit les valeurs comme des UInt8 au lieu de les lire comme des Int16
+    vecteur = reinterpret(Int16, read(chemin)) 
 
     if isempty(vecteur)
         error("Le fichier est vide")
@@ -24,13 +30,30 @@ function lire_serie(chemin::String)::Vector{Int16}
 end
 
 
-# transforme chaque nombre du vecteur en l'entier pair inférieur ou égal
+
+"""
+    sous_quantifier(Vector{Int16})::Vector{Int16}
+    
+Transforme chaque valeur de la série temporelle x construit avec lire_serie() en l'entier pair inférieur ou égal.
+
+Autrement dit, construit xQ.
+
+# Paramètres:
+- série temporelle x
+"""
 function sous_quantifier(x::Vector{Int16})::Vector{Int16}
     return [v & Int16(-2) for v in x]
     # l'opérateur & avec -2 force le bit de poids faible à 0
 end
 
+"""
+    construire_p(Vector{Int16})::Dict{Tuple{Int16, Int16}, Int}
 
+Construit P sous la forme d'un dictionnaire, avec comme clé le couple x[n-1], x[n], et comme valeur son nombre d’apparition. 
+
+# Paramètres:
+- série temporelle x.
+"""
 function construire_p(x::Vector{Int16})
     P = Dict{Tuple{Int16, Int16}, Int}()
     # on initialise le dictionnaire vide
@@ -45,6 +68,14 @@ function construire_p(x::Vector{Int16})
 end
 
 
+"""
+    sauvegarder_xq(Vector{Int16} x String)::Nothing
+
+Sauvegarde la série sous-quantifiée xQ dans un fichier.
+
+# Paramètres:
+- chemin du fichier de sauvegarde.
+"""
 function sauvegarder_xq(xQ::Vector{Int16}, chemin::String)
     open(chemin, "w") do f
         write(f, xQ)
@@ -52,6 +83,14 @@ function sauvegarder_xq(xQ::Vector{Int16}, chemin::String)
 end
 
 
+"""
+    sauvegarder_p(Dict{Tuple{Int16, Int16}, Int} x String)::Nothing
+
+Sauvegarde le dictionnaire P dans un fichier.
+
+# Paramètres:
+- chemin du fichier de sauvegarde.
+"""
 function sauvegarder_p(P::Dict{Tuple{Int16, Int16}, Int}, chemin::String)
     open(chemin, "w") do f
         for (cle, c) in P
@@ -61,6 +100,14 @@ function sauvegarder_p(P::Dict{Tuple{Int16, Int16}, Int}, chemin::String)
 end
 
 
+"""
+    lire_p(String):: Dict{Tuple{Int16,Int16},Int}
+
+Construit la représentation du fichier qui contient P sous la forme d'un dictionnaire.
+
+# Paramètres:
+- fichier qui contient P
+"""
 function lire_p(fichier_p::String)::Dict{Tuple{Int16,Int16},Int}
     p = Dict{Tuple{Int16,Int16},Int}()
 
@@ -78,10 +125,3 @@ function lire_p(fichier_p::String)::Dict{Tuple{Int16,Int16},Int}
 end
 
 
-function generer_donnees(x_chemin::String, xQ_chemin::String, P_chemin::String)
-    x  = lire_serie(x_chemin)
-    xQ = sous_quantifier(x)
-    P  = construire_p(x)
-    sauvegarder_xq(xQ, xQ_chemin)
-    sauvegarder_p(P, P_chemin)
-end

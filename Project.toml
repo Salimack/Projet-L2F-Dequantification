@@ -1,6 +1,6 @@
-name = "L2F2"
+name = "L2F2_Dequantification_App"
 uuid = "4dcdeae6-8727-46cb-b2e5-634683e5604d"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["KANGNI Dina", "BENALI Abdallah", "ACHAK Salim", "ZOUAD Mohammed"]
 
 [deps]

@@ -48,7 +48,6 @@ function sauvegarder_solution(solution::Vector{Int16}, chemin_dossier::String, c
         for v in solution
             println(fichier, v)
         end
-        DEBUG && println("Sauvegarde de la solution reussie")
     end
 
     return chemin_fichier
@@ -72,8 +71,8 @@ function elaguer!(arbre::Arbre, n::Noeud)
     if n.parent === nothing
         return
     end
-    supprimer_noeud!(arbre, n.parent, n)
-    if est_feuille(n.parent)
+    n.vivant = false
+    if n.parent.parent !== nothing && !any(e -> e.vivant, n.parent.enfants)
         elaguer!(arbre, n.parent)
     end
 end
@@ -136,8 +135,9 @@ function developper(
 
     #cas de base : on a parcouru tout xQ donc cette branche est une solution
     if niveau == length(xQ) + 1
-        DEBUG && println("[SOLUTION TROUVEE AU NIVEAU ", niveau, "]")
+        DEBUG && println("\n[SOLUTION TROUVEE AU NIVEAU ", niveau-1, "]")
         solution = extraire_serie(noeud)
+        DEBUG && println("TAILLE SOLUTION = ", length(extraire_serie(noeud)))
         chemin_solution = sauvegarder_solution(solution, chemin, compteur_solutions)
         ajouter_solution(chemin_solution)
     else
@@ -146,8 +146,7 @@ function developper(
         valeurs_possibles = [xQn, xQn + Int16(1)]
         valide = 0
 
-        DEBUG && println(("Initialisation : fils_pair=", xQ[1], " fils_impair=", xQ[1] + Int16(1)))
-        DEBUG && println("Arbre créé, début de la recherche")
+        DEBUG && println("[NIVEAU ", niveau, "] valeur noeud=", noeud.valeur, " | candidats=", valeurs_possibles)
 
         for valeur in valeurs_possibles
             if !est_lance[]
@@ -224,7 +223,7 @@ function dequantifier(
 
     compteur_solutions = Ref{Int}(0)
 
-    arbre.racine = Noeud(Int16(0), nothing, false, Noeud[], nothing)
+    arbre.racine = Noeud(Int16(0), nothing, false, Noeud[], nothing, true)
 
     enfant_gauche = ajouter_enfant!(arbre, arbre.racine, xQ[1], false, copy(P))
     enfant_droit  = ajouter_enfant!(arbre, arbre.racine, xQ[1] + Int16(1), true, copy(P))

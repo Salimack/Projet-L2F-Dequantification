@@ -72,6 +72,9 @@ function creer_interface()
 
     #texte de succès affiché à l'ecran
     message_succes_obs = Observable("")
+    
+    #//NOTE: changement
+    couleurs_obs = Observable(Vector{Symbol}())
 
 
     #========================================================
@@ -105,13 +108,11 @@ function creer_interface()
     
     #Les solutions
     Label(layout_gauche[3, 1], "Liste des solutions :", halign = :left, padding = (0, 0, 10, 0), fontsize=18, font=:bold)
-
-    layout_liste = layout_gauche[4,1] = GridLayout(halign =:left, tellheight=false)
-
+    layout_liste = layout_gauche[4,1] = GridLayout(halign =:left, valign = :top, tellheight=false)
 
     #Box invisible pour pousser tout le contenu vers le haut
-    layout_gauche[5, 1] = Box(figure, visible = false) 
-    rowsize!(layout_gauche, 5, Relative(1)) 
+    layout_gauche[9, 1] = Box(figure, visible = false) 
+    rowsize!(layout_gauche, 9, Relative(1)) 
 
     #COLONNE DROITE
    layout_droite = figure[1, 2] = GridLayout()
@@ -146,7 +147,9 @@ function creer_interface()
     rowgap!(layout_droite, 10)
 
     # Dessin de l'arbre
-   graphplot!(ax, graphe_obs,layout = _ -> positions_obs[], node_size  = 20,node_color = :blue,edge_color = :gray,arrow_show = false)
+    # //NOTE: changement graphplot
+    graphplot!(ax, graphe_obs, layout = _ -> positions_obs[], node_size = 20, node_color = couleurs_obs, edge_color = :gray, arrow_show = false)
+
    
    # affichage dynamique du pourcentage
    text!(ax, 0, 0,
@@ -164,7 +167,7 @@ function creer_interface()
     ========================================================================================#
 
     # met à jour le graphe affiché à chaque modification de l'arbre
-    mis_a_jour_arbre_cb = (arbre) -> mis_a_jour_arbre(graphe_obs, positions_obs, arbre)
+    mis_a_jour_arbre_cb = (arbre) -> mis_a_jour_arbre(graphe_obs, positions_obs, couleurs_obs, arbre)
 
     #met à jour le nombre de branches affiché
    mis_a_jour_branches_cb = (n) -> begin
@@ -213,21 +216,20 @@ end
     autolimits!(ax)
 end
 
-   # --- bouton arrêter (est géré grâce à la reference continuer)
+   # bouton arrêter ( géré grâce à la reference continuer)
    on(bouton_arreter.clicks) do x
        arreter_animation(est_lance, continuer)
    end
 
-   # --- bouton exporter ---
+   # bouton exporter
    on(bouton_exporter.clicks) do x
        telecharger_solutions(solution_obs[],message_succes_obs)
    end
 
 
-   #comportement de la liste des solutions
+   #les solutions
    on(solution_obs) do chemins
     foreach(delete!, contents(layout_liste))
-    
     for (i, chemins) in enumerate(chemins)
         Label(layout_liste[i, 1], basename(chemins), halign = :left)
     end
@@ -598,12 +600,11 @@ Convertit la structure `Arbre` en un `SimpleDiGraph`.
 - un vecteur avec les positions de chaque noeud.
 """
 function convertir_arbre(arbre::Arbre)
-    graphe     = SimpleDiGraph()
-    indices    = Dict{Noeud, Int}()
-    x_pos      = Dict{Noeud, Float32}()
+    graphe      = SimpleDiGraph()
+    indices     = Dict{Noeud, Int}()
+    x_pos       = Dict{Noeud, Float32}()
     profondeurs = Dict{Noeud, Int}()
-    compteur   = Ref(0)
-
+    compteur    = Ref(0)
 
     indexer_noeuds!(graphe, arbre.racine, indices)
     relier_aretes!(graphe, arbre.racine, indices)
@@ -611,13 +612,16 @@ function convertir_arbre(arbre::Arbre)
     calculer_profondeur!(arbre.racine, profondeurs, 0)
 
     positions = Vector{Point2f}(undef, nv(graphe))
-
-    #on place chaque noeud à sa position (x,y)
     for (noeud, i) in indices
         positions[i] = Point2f(x_pos[noeud], -Float32(profondeurs[noeud]))
     end
 
-    return graphe, positions
+    couleurs = Vector{Symbol}(undef, nv(graphe))
+    for (noeud, i) in indices
+        couleurs[i] = noeud.vivant ? :blue : :red
+    end
+
+    return graphe, positions, couleurs
 end
 
 
@@ -631,16 +635,16 @@ Paramètres :
 - `positions_obs` : observable des positions des noeuds
 - `arbre` : l'arbre courant issu de l'algorithme
 """
-function mis_a_jour_arbre(graphe_obs::Observable, positions_obs::Observable, arbre::Arbre)
-    g, pos = convertir_arbre(arbre)
+function mis_a_jour_arbre(graphe_obs, positions_obs, couleurs_obs, arbre)
+    g, pos, col = convertir_arbre(arbre)
     if nv(g) == 0
-        #On place un noeud "fantome": GraphMakie ne sais pas construire un graphe à partir de "rien"
         graphe_obs[]    = SimpleDiGraph(1)
         positions_obs[] = [Point2f(0.5, 0.0)]
+        couleurs_obs[]  = [:blue]
     else
-        #On met à jour les positions et le graphe
         positions_obs[] = pos
-        graphe_obs[]    = g 
+        couleurs_obs[]  = col
+        graphe_obs[]    = g
     end
 end
 

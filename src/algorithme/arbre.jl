@@ -24,6 +24,7 @@
         pos::Bool # false = pair (fils bas) true = impair (fils haut)
         enfants::Vector{Noeud}
         histogramme:: Union{Nothing, Dict{Tuple{Int16, Int16}, Int}} #l'histogramme de la racine est Nothing
+        vivant::Bool
     end
     
 
@@ -47,7 +48,7 @@
     Crée un arbre vide
     """
     function creer_arbre()::Arbre
-        racine = Noeud(Int16(0), nothing, false, Noeud[], nothing)
+        racine = Noeud(Int16(0), nothing, false, Noeud[], nothing, true)
         return Arbre(racine)
     end
 
@@ -70,7 +71,7 @@
             histogramme::Dict{Tuple{Int16, Int16}, Int}
             )::Noeud
 
-        return Noeud(valeur,parent,pos,Noeud[], copy(histogramme))
+        return Noeud(valeur,parent,pos,Noeud[], copy(histogramme), true)
     end
 
 
@@ -150,8 +151,8 @@
     Exemple: si l'arbre a 3 feuilles -> retourne 3.
     """
     function compter_branches(n::Noeud)
-        if est_feuille(n)
-            return 1
+        if isempty(n.enfants)
+            return n.vivant ? 1 : 0
         end
         total = 0
         for enfant in n.enfants

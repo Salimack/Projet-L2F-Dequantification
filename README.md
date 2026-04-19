@@ -59,7 +59,7 @@ et ensuite,
 
 Il est possible que le Contrôle Intelligent des Applications bloque les fichiers exécutables (notamment install.bat et run.bat).
 Dans ce cas, veuillez faire un clique-droit sur le fichier concerné et ouvrez "Propriétés".
-Rendez vous ensuite dans l'onglet Généralité, section Sécurité puis, décochez la case "Débloquer".
+Rendez vous ensuite dans l'onglet Généralité, section Sécurité puis, cochez la case "Débloquer".
 
 - Si vous êtes un utilisateur sous une distribution Linux ou sous MacOs
   Vous ouvrez un terminal et y saisissez:

@@ -1,15 +1,15 @@
-&#x20; ██╗ ██████╗ ███████╗██████╗
+                                               ██╗    ██████╗  ███████╗██████╗
+                                               ██║    ╚════██╗ ██╔════╝╚════██╗
+                                               ██║     █████╔╝ █████╗  █████╔╝
+                                               ██║     ██╔═══╝ ██╔══╝ ██╔═══╝
+                                               ███████╗███████╗██║    ███████╗
 
-  ██║ ╚════██╗██╔════╝╚════██╗
-  ██║ █████╔╝█████╗ █████╔╝
-  ██║ ██╔═══╝ ██╔══╝ ██╔═══╝
-  ███████╗███████╗██║ ███████╗
-  ╚══════╝╚══════╝╚═╝ ╚══════╝
+ 
 
-&#x20; # Projet L2F2 - Déquantification
-\*Version 1.0, 2026\*
-Ce fichier README a été généré le \[01-03-2026]
-Dernière mise à jour le : \[24-03-2026].
+                                                # Projet L2F2 - Déquantification
+                                                      Version 1.0, 2026
+                                            Ce fichier README a été généré le [01-03-2026]
+                                                Dernière mise à jour le : [20-04-2026].
 
 # DESCRIPTION
 
@@ -100,49 +100,53 @@ Notez qu'il est nécessaire d'importer des fichiers non vides et contenant suffi
 # GUIDE TECHNIQUE
 
 Le projet est organisé comme suit:
+.
+│   install.bat //script d'installation pour windows
+│   install.sh //script d'installation pour Linux
+│   LICENSE.txt //licence Apache
+│   Manifest.toml //fichier de configuration
+│   Project.toml //fichier de configuration
+│   README.md
+│   run.bat //script de lancement pour Windows
+│   run.sh //scipt de lancement pour Linux
+│
+├───src
+│   │   interface.jl //module implémentant l'interface graphique
+│   │   L2F2_Dequantification_App.jl //module d'entrée de l'application
+│   │
+│   ├───algorithme
+│   │       arbre.jl //module implémentant les structures d'arbre, de noeud et des fonctions associées
+│   │       construction.jl //programme auxiliaire
+│   │       dequantification.jl //programme principal
+│   │
+│   ├───data //dossier d'enregistrement des solutions de xQ et de P
+│   │   │
+│   │   └───temp //les solutions seront enregistrées dans ce dossier
 
-C:.
-├── LICENSE.txt
-├── Manifest.toml
-├── Project.toml
-├── README.md
-├── doc
-│   ├── Cahier_recette_L2F2_Version_1.2.pdf
-│   └── cahierCharges_Version_1.3.pdf
-├── install.bat
-├── install.sh
-├── run.bat
-├── run.sh
-├── src
-│   ├── algorithme
-│   │   ├── arbre.jl
-│   │   ├── construction.jl
-│   │   └── dequantification.jl
-│   ├── application.jl
-│   ├── data
-│   │   ├── P.ppm
-│   │   ├── temp
-│   │   └── xQ.dat
-│   └── interface.jl
-└── test
-├── data
-│   ├── input
-│   │   ├── P.ppm
-│   │   ├── x10.dat
-│   │   ├── x100.dat
-│   │   ├── x200.dat
-│   │   ├── x500.dat
-│   │   ├── x999.dat
-│   │   ├── x9999.dat
-│   │   ├── x99994.dat
-│   │   ├── x_AR1_940.dat
-│   │   ├── x_AR1_9980.dat
-│   │   └── x_AR1_99882.dat
-│   └── temp
-├── runtests.jl
-├── test_arbre.jl
-├── test_construction.jl
-└── test_dequantification.jl
+│
+└───test //dossier de test
+    │   runtests.jl
+    │   test_arbre.jl
+    │   test_construction.jl
+    │   test_dequantification.jl
+    │
+    └───data
+        ├───input
+        │       P.ppm
+        │       x10.dat
+        │       x100.dat
+        │       x19.dat
+        │       x200.dat
+        │       x47.dat
+        │       x500.dat
+        │       x999.dat
+        │       x9999.dat
+        │       x99994.dat
+        │       x_AR1_940.dat
+        │       x_AR1_9980.dat
+        │       x_AR1_99882.dat
+        │
+        └───temp
 
 ### Dépendances
 
@@ -171,20 +175,17 @@ Il ne donne pas leur ordre d'apparition, qui pourra être identifié avec l'arbr
 
 - l'algorithme parcourt l'arbre en profondeur.
 - pour chaque nœud:
+- il génère les deux fils possibles et vérifie si le couple formé est compatible avec l'histogramme
+- si le couple est compatible: les fils copient l'histogramme de leur père et décrémentent l'occurrence du nouveau couple formé.
+      On répète ces opérations récursivement sur les fils.
+- sinon on élague le père récursivement.
 
-&#x09;- il génère les deux fils possibles et vérifie si le couple formé est compatible avec l'histogramme
 
-&#x09; - si le couple est compatible: les fils copient l'histogramme de leur père et décrémentent l'occurrence du nouveau couple formé.
-
-&#x09; On répète ces opérations récursivement sur les fils.
-
-&#x09; - sinon on élague le père récursivement.
-
-&#x09;
 
 # DOCUMENTATION
 
-La documentation complète du projet se trouve dans le dossier "doc/" et comprend le cahier des charges, le cahier de recette, le cahier de conception général et détaillé et le plan de test. Le cahier de conception générale et détaillée décrit en particulier l'architecture du projet, les structures de données et le détail de chaque fonction.
+L'intégralité de la documentation est disponible sur: https://l2f2-dequantification-app.netlify.app/.
+Si vous voulez consulter ou télécharger le cahier des charges, le cahier de recette, le plan de test et le cahier de conception générale et détaillée, rendez vous sur la page d'acceuil à la section "Téléchargement des documents" ou utilisez la barre de recherche.
 
 # AUTEURS
 
@@ -201,4 +202,4 @@ Toute réutilisation ou redistribution commerciale doit mentionner explicitement
 
 Pour plus d'informations, vous pouvez vous référer à la documentation du projet.
 
-\---
+--

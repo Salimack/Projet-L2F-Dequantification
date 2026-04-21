@@ -4,7 +4,7 @@ on construit un arbre binaire et on elague les branches impossibles au fur et à
 Il génère par la suite toutes les solutions trouvées
 ================================================================#
 
-const DEBUG = true
+const DEBUG = false
 
 """
     est_compatible(Noeud x valeur):: Bool
@@ -171,7 +171,7 @@ function developper(
         noeud.histogramme = nothing
 
         
-        if valide == 0 || isempty(noeud.enfants)
+        if valide == 0 || est_feuille(noeud)
             if niveau <= length(xQ)
                 DEBUG && println("ELAGAGE noeud=", noeud.valeur, " parent=", noeud.parent.valeur)
                 elaguer!(arbre, noeud)

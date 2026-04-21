@@ -8,12 +8,13 @@
 
     Représente un nœud de l’arbre avec un histogramme associé.
 
-    #Champs:
+    # Champs:
     - valeur = valeur associé au noeud
     - parent = le parent du noeud
     - pos = indique si pair ou impair
     - enfants = liste des fils du noeud
     - histogramme = dictionnaire P associé
+    - vivant = booléen servant a indiqué si une branche est encore vivante ou si elle est élaguée
 
     Notez que l'histogramme de la racine est de type Nothing
 
@@ -113,29 +114,6 @@
         return enfant
     end
 
-  
-
-    """
-        supprimer_noeud(Arbre x Nœud x Noeud ):: Noeud
-
-    Supprime un noeud de la liste d'enfants de son parent.
-
-    Sert à élaguer quand une branche est impossible.
-
-    # Paramètres:
-    - arbre
-    - parent
-    - noeud
-
-    Exemple: supprimer_noeud!(arbre, parent, e1) -> enlève e1 de parent.enfants
-    """
-    function supprimer_noeud!(
-        arbre::Arbre,
-        parent::Noeud,
-        noeud::Noeud)
-
-        filter!(enfant -> enfant !== noeud, parent.enfants)
-    end
 
 
     """
@@ -151,7 +129,7 @@
     Exemple: si l'arbre a 3 feuilles -> retourne 3.
     """
     function compter_branches(n::Noeud)
-        if isempty(n.enfants)
+        if est_feuille(n)
             return n.vivant ? 1 : 0
         end
         total = 0

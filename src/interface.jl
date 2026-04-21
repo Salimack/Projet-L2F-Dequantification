@@ -16,7 +16,7 @@ using ZipFile
 
 
 const DOSSIER_DATA = joinpath(dirname(@__FILE__), "data")
-const DEBUG_INTERFACE = true
+const DEBUG_INTERFACE = false
 
 """
     creer_interface()::Nothing
@@ -73,7 +73,7 @@ function creer_interface()
     #texte de succès affiché à l'ecran
     message_succes_obs = Observable("")
     
-    #//NOTE: changement
+    #couleur des noeuds
     couleurs_obs = Observable(Vector{Symbol}())
 
 
@@ -126,7 +126,7 @@ function creer_interface()
    #Message de succes
    label_succes = Label(grille_bas[1,0], text = message_succes_obs, font = :bold,fontsize= 16, color = :green)
  
-   #bouton dynamique: soit importer x, soit importer xQ/P
+   #bouton d'importation x
     bouton_import    = Button(grille_bas[1, 1], label = "Importer x", height = 45, tellwidth = false,font = :bold)
 
     #bouton de lancemenent de l'algorithme
@@ -135,7 +135,7 @@ function creer_interface()
     #bouton d'arrêt de l'algo
     bouton_arreter     = Button(grille_bas[1, 3], label = "Arrêter", buttoncolor = :tomato, height = 45, tellwidth = false,font = :bold)
 
-    #bouton d'exportation du dossier contenant xQ et P
+    #bouton d'importation du dossier contenant xQ et P
     bouton_import_xQP = Button(grille_bas[1, 4], label = "Importer xQ et P", height = 45, tellwidth = false, font = :bold)
 
     # GESTION DE LESPACE
@@ -147,13 +147,12 @@ function creer_interface()
     rowgap!(layout_droite, 10)
 
     # Dessin de l'arbre
-    # //NOTE: changement graphplot
     graphplot!(ax, graphe_obs, layout = _ -> positions_obs[], node_size = 20, node_color = couleurs_obs, edge_color = :gray, arrow_show = false)
 
    
-   # affichage dynamique du pourcentage
+   # affichage du nombre de branches affiché à l'écran
    text!(ax, 0, 0,
-    text = texte_dynamique,    # On passe l'observable ici
+    text = texte_dynamique, 
     space = :relative, 
     align = (:left, :bottom), 
     offset = (15, 15), 
@@ -170,6 +169,7 @@ function creer_interface()
     mis_a_jour_arbre_cb = (arbre) -> mis_a_jour_arbre(graphe_obs, positions_obs, couleurs_obs, arbre)
 
     #met à jour le nombre de branches affiché
+    mis_a_jour_branches_cb = (n) -> mis_a_jour_branches(branches_obs, n)
    mis_a_jour_branches_cb = (n) -> begin
     DEBUG_INTERFACE && println("mis_a_jour_branches appelé avec ", n)
     mis_a_jour_branches(branches_obs, n)
@@ -180,7 +180,7 @@ end
     On définit le comportement de chaque bouton
    ==================================================================#
 
-   # bouton importer: change de role selon l'étape du projet
+   # bouton importer: charge les fichiers importés et affiche les messages d'erreur ou de réussite
    on(bouton_import.clicks) do x
     x = importer_fichier(ax, texte_erreur, message_succes_obs)
     if !isempty(x)
@@ -193,7 +193,7 @@ end
     importer_xQP(ax, xQ_charge, P_charge, texte_erreur,message_succes_obs)
 end
 
-   #bouton télécharger xQ et P: disponible seulement après la phase 1
+   #bouton télécharger xQ et P
    on(bouton_telecharger_xQP.clicks) do x
         telecharger_xQP(DOSSIER_DATA,message_succes_obs)
    end
@@ -211,7 +211,7 @@ end
        end
    end
 
-   #Cadre automatiquement la vue du graphe  pour que tout l'arbre reste visible 
+   #Cadrage automatique du graphe
    on(graphe_obs) do _
     autolimits!(ax)
 end
@@ -238,7 +238,7 @@ end
    #========================================================================
      affichage de la fenetre
     ========================================================================#
-    DEBUG_INTERFACE && println("OUVERTURE DE L'APPLICATION")
+    println("OUVERTURE DE L'APPLICATION")
     display(figure)
     wait(display(figure))
 end
@@ -250,7 +250,7 @@ end
 
 Vérifie que les données sont chargées, réinitialise l'interface graphique, met à jour le dossier de sauvegarde et lance l'animation.
 
-#Paramètres:
+# Paramètres:
 - l’axe dans lequel vit le graphe,
 - la référence du texte d’erreur qui s’affichera à la place de l’arbre,
 - les références vers xQ et P,
@@ -332,6 +332,7 @@ Initialisation et réinitialisation
         catch e
             DEBUG_INTERFACE && println("ERREUR : ", e)
         finally
+            #signal que l'algo se termine, quoi qu'il arrive
             est_lance[] = false
 
             #liste toutes les solutions du dossier
@@ -348,12 +349,12 @@ end
 
 Arrête l'animation si l'utilisateur clique sur le bouton arrêter.
 
-#Paramètres:
+# Paramètres:
 - la référence est_lance qui permet de prévenir l'algorithme que l'utilisateur a cliqué sur le bouton d'arrêt.
 """
 function arreter_animation(est_lance::Observable{Bool}, continuer::Ref{Bool})
-    est_lance[] = false #signal pour l'algorithme
-    continuer[] = false #signal pour l'interface graphique
+    est_lance[] = false #signal pour l'interface graphique
+    continuer[] = false #signal pour l'algorithme
 end
 
 
@@ -362,7 +363,7 @@ end
     mis_a_jour_branches(Observable{Int} x Int)::Nothing
 Met à jour le nombre de branches affiché à l'écran au fur et à mesure de l'animation.
 
-#Paramètres:
+# Paramètres:
 - observable du nombre de branches.
 - nouvelle valeur qu'on va mettre à jour.
 """
@@ -381,7 +382,7 @@ end
 
 Copie xQ.dat et P.ppm depuis le dossier de l'application vers un dossier choisi par l'utilisateur.
 
-#Paramètres:
+# Paramètres:
 - dossier de sauvearde de xQ et P dans l'application.
 - observable message_succes_obs permettant d'afficher un message pour indiquer que le téléchargement a réussi.
 """
@@ -410,7 +411,7 @@ end
 Importe le dossier contenant `xQ` et `P` et indique à l'interface si le chargement a réussi.
 Affiche un message d'erreur en cas d'erreur (fichiers non trouvables) ou un message de réussite en cas de succès.
 
-#Paramètres:
+# Paramètres:
 - l'axe dans lequel seront affiché les messages d'erreurs.
 - les références `xQ_charge` et `P_charge` permettant de notifier l'interface (notamment lancer_animation) que les données ont bien été chargé.
 - référence du texte d'erreur
@@ -473,7 +474,7 @@ end
 
 Télécharge les solutions dans un dossier choisi par l'utilisateur en format ZIP.
 
-#Paramètres:
+# Paramètres:
 - liste des solutions générées
 - observable du message de succès en cas de réussite du téléchargement.
 """
@@ -510,7 +511,7 @@ CONSTRUCTION DE L ARBRE MANUELLEMENT
 
 Parcourt l'arbre en profondeur et donne identifiant unique à chaque noeud.
 
-#Paramètres :
+# Paramètres :
 - `graphe` : le graphe auquel on ajoute les noeuds
 - `noeud` : noeud courant à indexer
 - `indices` : dictionnaire associant chaque noeud à son identifiant dans le graphe
@@ -530,7 +531,7 @@ end
 
 Parcourt l'arbre en profondeur et relie chaque noeud à ses enfants dans le graphe.
 
-#Paramètres :
+# Paramètres :
 - `graphe` : le graphe dans lequel on ajoute les arêtes
 - `noeud` : noeud courant à traiter
 - `indices` : dictionnaire associant chaque noeud à son identifiant dans le graphe
@@ -550,7 +551,7 @@ Calcule la position horizontale de chaque noeud pour l'affichage.
 Les feuilles sont placées de gauche à droite.  
 Les autres noeuds sont au centre entre leurs enfants.
 
-#Paramètres :
+# Paramètres :
 - `noeud` : noeud courant à traiter
 - `x_pos` : dictionnaire associant chaque noeud à sa position horizontale
 - `compteur` : compteur partagé incrémenté à chaque feuille rencontrée
@@ -574,7 +575,7 @@ end
 Calcule la profondeur de chaque noeud dans l'arbre pour déterminer sa position verticale.  
 La racine est à la profondeur 0, ses enfants sont à la profondeur 1 etc.
 
-#Paramètres :
+# Paramètres :
 - `noeud` : noeud courant à traiter
 - `profondeurs` : dictionnaire associant chaque noeud à sa profondeur
 - `prof` : profondeur courante
@@ -592,12 +593,13 @@ end
 
 Convertit la structure `Arbre` en un `SimpleDiGraph`.
 
-#Paramètres :
+# Paramètres :
 - `arbre` : l'arbre à convertir
 
-#Retourne :
+# Retourne :
 - le graphe orienté représentant l'arbre
 - un vecteur avec les positions de chaque noeud.
+- un vecteur avec la couleur de chaque sommet (bleu si vivant, rouge sinon)
 """
 function convertir_arbre(arbre::Arbre)
     graphe      = SimpleDiGraph()
@@ -626,11 +628,11 @@ end
 
 
 """
-    mis_a_jour_arbre(Observable x Observable x Arbre)::Nothing
+    mis_a_jour_arbre(Observable x Observable x Observable x Arbre)::Nothing
 
 Met à jour les observables du graphe et ses postions.
 
-Paramètres :
+# Paramètres :
 - `graphe_obs` : observable du graphe affiché
 - `positions_obs` : observable des positions des noeuds
 - `arbre` : l'arbre courant issu de l'algorithme
@@ -654,7 +656,7 @@ end
 
 Affiche un message d'erreur à l'ecran, dans l'emplacement (=`Axis`) du graphe.
 
-#Paramètres:
+# Paramètres:
 - l'axe du graphe dans lequel va s'afficher le message d'erreur.
 - le message.
 - la référence du texte d'erreur
@@ -677,7 +679,7 @@ end
 
 Affiche un message de succès dans le cas où l'importation ou l'exportation des fichiers/dossiers réussit
 
-#Paramètres:
+# Paramètres:
 - observable du message de réussite
 - message de réussite
 """
@@ -694,7 +696,13 @@ end
 """
     preparer_donnes(Vector{Int16} x Ref{Union{Nothing, Vector{Int16}}} x Ref{Union{Nothing, Dict{Tuple{Int16,Int16}, Int}} x String)
 
+La fonction calcule xQ, la série sous-quantifiée à 1 bit de x et P l'histogramme des couples. Elle les sauvegarde dans un dossier pour que l'utilisateur puisse les récupérer et les stocke dans leurs références respectives (xQ_ref et P_ref) pour lancer_animation
 
+# Paramètres:
+- la série x
+- référence de x
+- référence de P
+- dossier de sauvegarde
 """
 function preparer_donnees(x::Vector{Int16},
     xQ_ref::Ref{Union{Nothing, Vector{Int16}}},
@@ -718,7 +726,7 @@ end
 Ouvre l'explorateur de fichiers natif et charge le fichier x séléctionné. 
 En cas de réussite, affiche un message de réussite, sinon affiche un message d'erreurs dans l'emplacement du graphe.
 
-#Paramètres:
+# Paramètres:
 - on passe en entrée l'axe du graphe afin de gérer les erreur
 - référence `texte_erreur`
 - observable `message_succès`

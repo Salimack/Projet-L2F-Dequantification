@@ -2,7 +2,7 @@
                                                ██║    ╚════██╗ ██╔════╝╚════██╗
                                                ██║     █████╔╝ █████╗  █████╔╝
                                                ██║     ██╔═══╝ ██╔══╝ ██╔═══╝
-                                               ███████╗███████╗██║    ███████╗
+                                               ███████╗███████╗██║    ███████╗
 
  
 
@@ -32,6 +32,8 @@ d'interagir avec l'animation via les boutons de contrôle, et d'exporter les sol
 
 Cette application est une application de recherche qui ne tente pas de trouver la série originale mais toutes les séries qu'on PEUT trouver.
 
+
+
 # PREREQUIS
 
 Avant de lancer l'application, assurez-vous d'avoir:
@@ -39,8 +41,10 @@ Avant de lancer l'application, assurez-vous d'avoir:
 - la version 1.10.11 de Julia disponible sur https://julialang.org/downloads/.
   Si vous voulez avoir une version plus récente, assurez vous qu'elle soit compatible avec la bibliothèque graphique GLMakie
 - une carte graphique compatible avec OpenGL 3.3+
-- de préférence un système d'exploitation récent (Windows 10/11, MacOS 10.14+ ou Linux)
+- de préférence un système d'exploitation récent (Windows 10/11, ou Linux)
 - 4 Go minimum (on recommande 8 Go)
+
+
 
 # INSTALLATION
 
@@ -61,6 +65,16 @@ Il est possible que le Contrôle Intelligent des Applications bloque les fichier
 Dans ce cas, veuillez faire un clique-droit sur le fichier concerné et ouvrez "Propriétés".
 Rendez vous ensuite dans l'onglet Généralité, section Sécurité puis, cochez la case "Débloquer".
 
+Si vous rencontrez une erreur de type `LOAD ERROR: error opening package file <chemin>.dll`,
+désactivez votre antivirus le temps de l'installation et de l'utilisation de l'application.
+Certains antivirus (notamment McAfee) bloquent le chargement des bibliothèques de Julia.
+
+Si le problème persiste:
+- vous poouvez utiliser une machine virtuelle (VirtualBoxe par exemple)
+- utiliser WSL (Windows Subsystem for Linux)
+
+
+
 - Si vous êtes un utilisateur sous une distribution Linux ou sous MacOs
   Vous ouvrez un terminal et y saisissez:
   cd cheminVersLeProjet
@@ -71,6 +85,9 @@ Rendez vous ensuite dans l'onglet Généralité, section Sécurité puis, cochez
 
 L'installation des dépendances et le lancement de l'application peuvent prendre du temps au départ. Veuillez patienter.
 
+
+
+
 # FONCTIONNALITES
 
 Cette application vous propose trois grandes fonctionnalités.
@@ -79,8 +96,13 @@ Elle permet premièrement de générer et de récupérer sous la forme d'un doss
 
 Elle permet aussi de récupérer les solutions trouvées sous la forme de fichiers binaires codés sur 16 bits en élaguant un arbre binaire représentant toutes les reconstructions possibles du jeu de données initial.
 
-Enfin, l'interface graphique permet de visualiser la construction et l'élagage de cet arbre ainsi que le pourcentage de branches restantes.
+Enfin, l'interface graphique permet de visualiser la construction et l'élagage de cet arbre ainsi que le nombre de branches restantes.
+Les branches élaguées sont représentées en rouges et les branches encore vivantes en bleus.
+
 Des boutons sont aussi mis à disposition pour pouvoir interagir avec l'animation.
+
+
+
 
 # GUIDE UTILISATEUR:
 
@@ -95,58 +117,66 @@ Tous les résultats seront affichés dans la liste des résultats.
 Vous avez la possibilité de tous les récupérer au format Zip en cliquant sur **exporter les solutions**.
 Vous pouvez aussi telecharger un dossier contenant xQ et P générés grâce à l'algorithme en cliquant sur **telecharger xQ et P**.
 
+Si vous voulez réinitialiser l'interface graphique, appuyer sur **effacer**.
+
 Notez qu'il est nécessaire d'importer des fichiers non vides et contenant suffisamment de données, soit plus de deux.
+
+
+
 
 # GUIDE TECHNIQUE
 
 Le projet est organisé comme suit:
 .
-│   install.bat //script d'installation pour windows
-│   install.sh //script d'installation pour Linux
-│   LICENSE.txt //licence Apache
-│   Manifest.toml //fichier de configuration
-│   Project.toml //fichier de configuration
-│   README.md
-│   run.bat //script de lancement pour Windows
-│   run.sh //scipt de lancement pour Linux
+│ install.bat //script d'installation pour windows
+│ install.sh //script d'installation pour Linux
+│ LICENSE.txt //licence Apache
+│ Manifest.toml //fichier de configuration
+│ Project.toml //fichier de configuration
+│ README.md
+│ run.bat //script de lancement pour Windows
+│ run.sh //scipt de lancement pour Linux
 │
 ├───src
-│   │   interface.jl //module implémentant l'interface graphique
-│   │   L2F2_Dequantification_App.jl //module d'entrée de l'application
-│   │
-│   ├───algorithme
-│   │       arbre.jl //module implémentant les structures d'arbre, de noeud et des fonctions associées
-│   │       construction.jl //programme auxiliaire
-│   │       dequantification.jl //programme principal
-│   │
-│   ├───data //dossier d'enregistrement des solutions de xQ et de P
-│   │   │
-│   │   └───temp //les solutions seront enregistrées dans ce dossier
+│ │ interface.jl //module implémentant l'interface graphique
+│ │ L2F2_Dequantification_App.jl //module d'entrée de l'application
+│ │
+│ ├───algorithme
+│ │ arbre.jl //module implémentant les structures d'arbre, de noeud et des fonctions associées
+│ │ construction.jl //programme auxiliaire
+│ │ dequantification.jl //programme principal
+│ │
+│ ├───data //dossier d'enregistrement des solutions de xQ et de P
+│ │ │
+│ │ └───temp //les solutions seront enregistrées dans ce dossier
 
 │
 └───test //dossier de test
-    │   runtests.jl
-    │   test_arbre.jl
-    │   test_construction.jl
-    │   test_dequantification.jl
-    │
-    └───data
-        ├───input
-        │       P.ppm
-        │       x10.dat
-        │       x100.dat
-        │       x19.dat
-        │       x200.dat
-        │       x47.dat
-        │       x500.dat
-        │       x999.dat
-        │       x9999.dat
-        │       x99994.dat
-        │       x_AR1_940.dat
-        │       x_AR1_9980.dat
-        │       x_AR1_99882.dat
-        │
-        └───temp
+│ runtests.jl
+│ test_arbre.jl
+│ test_construction.jl
+│ test_dequantification.jl
+│
+└───data
+├───input
+│ P.ppm
+│ x10.dat
+│ x100.dat
+│ x19.dat
+│ x200.dat
+│ x47.dat
+│ x500.dat
+│ x999.dat
+│ x9999.dat
+│ x99994.dat
+│ x_AR1_940.dat
+│ x_AR1_9980.dat
+│ x_AR1_99882.dat
+│
+└───temp
+
+
+
 
 ### Dépendances
 
@@ -160,6 +190,9 @@ GraphMakie permet la visualisation des graphes. Elle est utilisée pour afficher
 NativeFileDialog ouvre le sélecteur de fichiers natif du système d'exploitation.
 
 ZipFile permet de regrouper les séries candidates dans une archive ZIP.
+
+
+
 
 ### Fonctionnement de l'algorithme
 
@@ -177,15 +210,19 @@ Il ne donne pas leur ordre d'apparition, qui pourra être identifié avec l'arbr
 - pour chaque nœud:
 - il génère les deux fils possibles et vérifie si le couple formé est compatible avec l'histogramme
 - si le couple est compatible: les fils copient l'histogramme de leur père et décrémentent l'occurrence du nouveau couple formé.
-      On répète ces opérations récursivement sur les fils.
+  On répète ces opérations récursivement sur les fils.
 - sinon on élague le père récursivement.
+
 
 
 
 # DOCUMENTATION
 
 L'intégralité de la documentation est disponible sur: https://l2f2-dequantification-app.netlify.app/.
-Si vous voulez consulter ou télécharger le cahier des charges, le cahier de recette, le plan de test et le cahier de conception générale et détaillée, rendez vous sur la page d'acceuil à la section "Téléchargement des documents" ou utilisez la barre de recherche.
+Si vous voulez consulter ou télécharger le cahier des charges, le cahier de recette, le plan de test et le cahier de conception générale et détaillée, rendez vous sur la page d'acceuil, section "Téléchargement des documents" ou utilisez la barre de recherche.
+
+
+
 
 # AUTEURS
 
@@ -193,6 +230,9 @@ Développé par Abdallah BENALI, Dina KANGNI, Mohammed ZOUAD et Salim Achak.
 
 Sous la direction de Gaël MAHE et de David JANISZEK.
 Dans le cadre de l'UE Projet Professionnel dans l'université Paris Cité.
+
+
+
 
 # LICENSE
 

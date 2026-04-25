@@ -1,0 +1,10 @@
+# fichiers generés par Julia
+Manifest.toml
+*.jl.cov
+*.jl.mem
+
+# solutions generées par l'algo
+src/data/temp/
+
+# dossier SVN
+.svn/

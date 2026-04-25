@@ -137,6 +137,9 @@ Pour chaque valeur sous-quantifiée `xQ[n]`, la valeur originale `x[n]` est soit
 
 L'algorithme parcourt cet arbre en profondeur (DFS). Pour chaque nœud, il génère les deux fils possibles et vérifie si le couple formé est compatible avec l'histogramme `P`. Si oui, le fils hérite de `P` et décrémente l'occurrence du couple. Sinon, la branche est élaguée. À la fin, les branches restantes sont les solutions candidates.
 
+### Limites connues
+
+Les performances de l'algorithme dépendent fortement de la structure de l'histogramme `P`. Sur des données générées aléatoirement, la complexité reste raisonnable car les couples sont distribués de manière uniforme. En revanche, sur les données fournies par l'encadrant, l'histogramme est déséquilibré : certains couples apparaissent beaucoup plus souvent que d'autres, ce qui provoque une explosion combinatoire du nombre de branches. La complexité tend alors vers l'exponentielle et l'algorithme peut devenir très lent ou ne pas terminer sur les grands signaux. Il s'agit d'une limite algorithmique connue et documentée, non d'un bug.
 ---
 
 ## Auteurs

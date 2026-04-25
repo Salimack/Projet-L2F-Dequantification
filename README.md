@@ -1,245 +1,154 @@
-                                               ██╗    ██████╗  ███████╗██████╗
-                                               ██║    ╚════██╗ ██╔════╝╚════██╗
-                                               ██║     █████╔╝ █████╗  █████╔╝
-                                               ██║     ██╔═══╝ ██╔══╝ ██╔═══╝
-                                               ███████╗███████╗██║    ███████╗
+# Projet L2F2 — Déquantification
 
- 
+**Version 1.0, 2026**  
+Dernière mise à jour : 25/04/2026
 
-                                                # Projet L2F2 - Déquantification
-                                                      Version 1.0, 2026
-                                            Ce fichier README a été généré le [01-03-2026]
-                                                Dernière mise à jour le : [20-04-2026].
+---
 
-# DESCRIPTION
+## Description
 
 Cette application implémente un algorithme de déquantification à 1 bit sur des séries temporelles.
 
-La sous-quantification à 1 bit supprime le bit de poids faible de chaque valeur d'une série `x`.
-Elle produit donc `xQ` où chaque valeur est le nombre pair inférieur ou égal.
-Cette opération
-est irréversible : pour chaque `xQ[n]`, la valeur originale `x[n]` vaut soit `xQ[n]` soit
-`xQ[n] + 1`.
+La sous-quantification à 1 bit supprime le bit de poids faible de chaque valeur d'une série `x`. Elle produit `xQ` où chaque valeur est le nombre pair inférieur ou égal. Cette opération est irréversible : pour chaque `xQ[n]`, la valeur originale `x[n]` vaut soit `xQ[n]` soit `xQ[n] + 1`.
 
-L'application exploite l'histogramme `P` des couples de valeurs successives de `x`.
-Elle construit un arbre binaire représentant toutes les séries possibles compatibles avec cet histogramme et `xQ`, puis
-l'élague progressivement en éliminant les branches incompatibles avec `P`.
-Les séries restantes à la fin de l'élagage sont donc toutes les solutions possibles, parmi lesquelles figure nécessairement
-la série originale `x`.
+L'application exploite l'histogramme `P` des couples de valeurs successives de `x`. Elle construit un arbre binaire représentant toutes les séries possibles compatibles avec cet histogramme et `xQ`, puis l'élague progressivement en éliminant les branches incompatibles avec `P`. Les séries restantes à la fin de l'élagage sont toutes les solutions possibles, parmi lesquelles figure nécessairement la série originale `x`.
 
-L'interface graphique permet de visualiser en temps réel la construction et l'élagage de cet arbre,
-d'interagir avec l'animation via les boutons de contrôle, et d'exporter les solutions trouvées.
+L'interface graphique permet de visualiser en temps réel la construction et l'élagage de cet arbre, d'interagir avec l'animation via les boutons de contrôle, et d'exporter les solutions trouvées.
 
-Cette application est une application de recherche qui ne tente pas de trouver la série originale mais toutes les séries qu'on PEUT trouver.
+> Cette application est une application de recherche qui ne tente pas de trouver la série originale mais toutes les séries qu'on PEUT trouver.
 
+---
 
+## Prérequis
 
-# PREREQUIS
+- Julia **1.10.11** — disponible sur https://julialang.org/downloads/ (si version plus récente, vérifier la compatibilité avec GLMakie)
+- Carte graphique compatible **OpenGL 3.3+**
+- Système d'exploitation récent (Windows 10/11, macOS 10.14+, ou Linux)
+- **4 Go de RAM minimum** (8 Go recommandés)
 
-Avant de lancer l'application, assurez-vous d'avoir:
+---
 
-- la version 1.10.11 de Julia disponible sur https://julialang.org/downloads/.
-  Si vous voulez avoir une version plus récente, assurez vous qu'elle soit compatible avec la bibliothèque graphique GLMakie
-- une carte graphique compatible avec OpenGL 3.3+
-- de préférence un système d'exploitation récent (Windows 10/11, ou Linux)
-- 4 Go minimum (on recommande 8 Go)
+## Installation
 
+### Windows
 
+Double-cliquez sur `install.bat` pour installer les dépendances, puis sur `run.bat` pour lancer l'application.
 
-# INSTALLATION
-
-Le lancement de l'application dépend ensuite de votre système d'exploitation.
-
-- Si vous êtes un utilisateur sous Windows
-  Vous pouvez dans un premier temps double-cliquer directement sur le fichier "install.bat" (qui installera les dépendances) et ensuite run.bat(qui lancera l'application).
-  Notez que si vous installez les dépendances une fois, il ne sera pas nécessaire de le refaire au prochain lancement de l'application.
-
-Vous pouvez aussi l'exécuter depuis le terminal. Pour ce faire, placez-vous dans le dossier du projet avec la commande:
+Depuis le terminal :
+```
 cd cheminVersLeProjet
-puis saisissez
-'install.bat'
-et ensuite,
-'run.bat'
+install.bat
+run.bat
+```
 
-Il est possible que le Contrôle Intelligent des Applications bloque les fichiers exécutables (notamment install.bat et run.bat).
-Dans ce cas, veuillez faire un clique-droit sur le fichier concerné et ouvrez "Propriétés".
-Rendez vous ensuite dans l'onglet Généralité, section Sécurité puis, cochez la case "Débloquer".
+> Si Windows bloque les fichiers `.bat` : clic droit → Propriétés → cocher "Débloquer" en bas.
 
-Si vous rencontrez une erreur de type `LOAD ERROR: error opening package file <chemin>.dll`,
-désactivez votre antivirus le temps de l'installation et de l'utilisation de l'application.
-Certains antivirus (notamment McAfee) bloquent le chargement des bibliothèques de Julia.
+### Linux / macOS
 
-Si le problème persiste:
-- vous poouvez utiliser une machine virtuelle (VirtualBoxe par exemple)
-- utiliser WSL (Windows Subsystem for Linux)
+```bash
+cd cheminVersLeProjet
+chmod +x install.sh run.sh
+./install.sh
+./run.sh
+```
 
+> L'installation des dépendances peut prendre du temps au premier lancement. Veuillez patienter.
 
+---
 
-- Si vous êtes un utilisateur sous une distribution Linux ou sous MacOs
-  Vous ouvrez un terminal et y saisissez:
-  cd cheminVersLeProjet
-  Par défaut vous ne pouvez pas exécuter des scripts.
-  Cliquez donc 'chmod +x install.sh' suivi de 'chmod +x run.sh'
-  Cliquez ensuite './install.sh' pour installer les dépendances puis './run.sh' pour lancer l'application.
-  Notez que si vous installez les dépendances une fois, il ne sera pas nécessaire de le refaire au prochain lancement de l'application.
+## Fonctionnalités
 
-L'installation des dépendances et le lancement de l'application peuvent prendre du temps au départ. Veuillez patienter.
+- Génération de `xQ` (série sous-quantifiée) et de `P` (histogramme des couples) à partir d'un fichier `x`
+- Reconstruction des séries candidates via construction et élagage d'un arbre binaire
+- Visualisation animée en temps réel de la construction et de l'élagage de l'arbre
+- Export des solutions trouvées en fichiers `.dat` ou archive ZIP
+- Import d'un dossier `xQ` + `P` existant pour relancer l'algorithme sans reimporter `x`
 
+---
 
+## Guide utilisateur
 
+1. Cliquez sur **Importer x** et sélectionnez votre série temporelle au format binaire 16 bits
+2. Cliquez sur **Lancer** pour démarrer l'algorithme
+3. Cliquez sur **Arrêter** pour interrompre l'animation à tout moment
+4. Les solutions trouvées apparaissent dans la liste à gauche
+5. Cliquez sur **Exporter les solutions** pour les télécharger en ZIP
+6. Cliquez sur **Telecharger xQ et P** pour récupérer les données générées
+7. Cliquez sur **Effacer** pour réinitialiser l'interface
 
-# FONCTIONNALITES
+> Vous pouvez aussi importer directement un dossier contenant `xQ.dat` et `P.ppm` via **Importer xQ et P**.
 
-Cette application vous propose trois grandes fonctionnalités.
+---
 
-Elle permet premièrement de générer et de récupérer sous la forme d'un dossier l'histogramme du jeu de données que vous aurez soumis ainsi que sa version sous-quantifiée.
+## Guide technique
 
-Elle permet aussi de récupérer les solutions trouvées sous la forme de fichiers binaires codés sur 16 bits en élaguant un arbre binaire représentant toutes les reconstructions possibles du jeu de données initial.
+### Structure du projet
 
-Enfin, l'interface graphique permet de visualiser la construction et l'élagage de cet arbre ainsi que le nombre de branches restantes.
-Les branches élaguées sont représentées en rouges et les branches encore vivantes en bleus.
-
-Des boutons sont aussi mis à disposition pour pouvoir interagir avec l'animation.
-
-
-
-
-# GUIDE UTILISATEUR:
-
-Au lancement de l'application, cliquez sur le bouton **Importer x** et sélectionnez votre série temporelle au format binaire 16 bits depuis votre système de fichiers.
-Vous pourrez ensuite lancer l'application en cliquant sur le bouton **lancer**.
-Vous avez la possibilité d'appuyer sur le bouton **arreter** après lancement pour stopper l'animation.
-Notez cependant que si par la suite vous cliquez à nouveau sur **lancer**, l'animation redémarrera depuis le début.
-
-Si vous le souhaitez, vous pourrez (seulement après un premier lancement de l'animation) importer un dossier contenant xQ et P (en cliquant sur **importer xQ et P**) et lancer l'animation en cliquant sur **lancer** avec ces données.
-
-Tous les résultats seront affichés dans la liste des résultats.
-Vous avez la possibilité de tous les récupérer au format Zip en cliquant sur **exporter les solutions**.
-Vous pouvez aussi telecharger un dossier contenant xQ et P générés grâce à l'algorithme en cliquant sur **telecharger xQ et P**.
-
-Si vous voulez réinitialiser l'interface graphique, appuyer sur **effacer**.
-
-Notez qu'il est nécessaire d'importer des fichiers non vides et contenant suffisamment de données, soit plus de deux.
-
-
-
-
-# GUIDE TECHNIQUE
-
-Le projet est organisé comme suit:
+```
 .
-│ install.bat //script d'installation pour windows
-│ install.sh //script d'installation pour Linux
-│ LICENSE.txt //licence Apache
-│ Manifest.toml //fichier de configuration
-│ Project.toml //fichier de configuration
-│ README.md
-│ run.bat //script de lancement pour Windows
-│ run.sh //scipt de lancement pour Linux
-│
-├───src
-│ │ interface.jl //module implémentant l'interface graphique
-│ │ L2F2_Dequantification_App.jl //module d'entrée de l'application
-│ │
-│ ├───algorithme
-│ │ arbre.jl //module implémentant les structures d'arbre, de noeud et des fonctions associées
-│ │ construction.jl //programme auxiliaire
-│ │ dequantification.jl //programme principal
-│ │
-│ ├───data //dossier d'enregistrement des solutions de xQ et de P
-│ │ │
-│ │ └───temp //les solutions seront enregistrées dans ce dossier
+├── install.bat                  # script d'installation Windows
+├── install.sh                   # script d'installation Linux/macOS
+├── run.bat                      # script de lancement Windows
+├── run.sh                       # script de lancement Linux/macOS
+├── LICENSE.txt                  # licence Apache 2.0
+├── Manifest.toml                # versions exactes des dépendances
+├── Project.toml                 # déclaration des dépendances
+├── README.md
+├── src/
+│   ├── L2F2_Dequantification_App.jl   # point d'entrée
+│   ├── interface.jl                   # interface graphique
+│   └── algorithme/
+│       ├── arbre.jl                   # structures Noeud et Arbre
+│       ├── construction.jl            # génération de xQ et P
+│       └── dequantification.jl        # algorithme principal
+│   └── data/
+│       └── temp/                      # solutions générées
+└── test/
+    ├── runtests.jl
+    ├── test_arbre.jl
+    ├── test_construction.jl
+    ├── test_dequantification.jl
+    └── data/
+        ├── input/                     # jeux de données de test
+        └── temp/
+```
 
-│
-└───test //dossier de test
-│ runtests.jl
-│ test_arbre.jl
-│ test_construction.jl
-│ test_dequantification.jl
-│
-└───data
-├───input
-│ P.ppm
-│ x10.dat
-│ x100.dat
-│ x19.dat
-│ x200.dat
-│ x47.dat
-│ x500.dat
-│ x999.dat
-│ x9999.dat
-│ x99994.dat
-│ x_AR1_940.dat
-│ x_AR1_9980.dat
-│ x_AR1_99882.dat
-│
-└───temp
+### Lancer les tests
 
-
-
+```bash
+cd cheminVersLeProjet
+julia --project=. test/runtests.jl
+```
 
 ### Dépendances
 
-L'application repose sur quatre bibliothèques externes, toutes installées automatiquement par les scripts de lancement.
+| Bibliothèque | Rôle |
+|---|---|
+| GLMakie | Interface graphique (OpenGL) |
+| GraphMakie | Visualisation de l'arbre |
+| NativeFileDialog | Explorateur de fichiers natif |
+| ZipFile | Export des solutions en ZIP |
 
-GLMakie est la bibliothèque graphique principale. Elle s'appuie sur OpenGL pour le rendu et fournit les éléments d'interface tels que les boutons par exemple.
-Une carte graphique compatible OpenGL 3.3 est donc fortement conseillée.
-
-GraphMakie permet la visualisation des graphes. Elle est utilisée pour afficher et mettre à jour l'arbre binaire pendant l'animation.
-
-NativeFileDialog ouvre le sélecteur de fichiers natif du système d'exploitation.
-
-ZipFile permet de regrouper les séries candidates dans une archive ZIP.
-
-
-
+Toutes les dépendances sont installées automatiquement par `install.bat` / `install.sh`.
 
 ### Fonctionnement de l'algorithme
 
-L'algorithme repose sur une propriété simple :
-pour chaque valeur sous-quantifiée "xQ\[n]", la valeur originale "x\[n]" est soit "xQ\[n]" (valeur paire), soit "xQ\[n] + 1" (valeur impaire).
-L'ensemble de toutes les reconstructions possibles est donc représentable sous la forme d'un arbre binaire.
+Pour chaque valeur sous-quantifiée `xQ[n]`, la valeur originale `x[n]` est soit `xQ[n]` (pair) soit `xQ[n] + 1` (impair). L'ensemble de toutes les reconstructions possibles est représentable sous la forme d'un arbre binaire.
 
-L'algorithme utilise l'histogramme des couples de x, la série originale.
+L'algorithme parcourt cet arbre en profondeur (DFS). Pour chaque nœud, il génère les deux fils possibles et vérifie si le couple formé est compatible avec l'histogramme `P`. Si oui, le fils hérite de `P` et décrémente l'occurrence du couple. Sinon, la branche est élaguée. À la fin, les branches restantes sont les solutions candidates.
 
-Cet histogramme, implémenté sous la forme d'un dictionnaire, révèle les couples qui existent et plus précisément leur occurrence dans la série de base.
+---
 
-Il ne donne pas leur ordre d'apparition, qui pourra être identifié avec l'arbre binaire.
+## Auteurs
 
-- l'algorithme parcourt l'arbre en profondeur.
-- pour chaque nœud:
-- il génère les deux fils possibles et vérifie si le couple formé est compatible avec l'histogramme
-- si le couple est compatible: les fils copient l'histogramme de leur père et décrémentent l'occurrence du nouveau couple formé.
-  On répète ces opérations récursivement sur les fils.
-- sinon on élague le père récursivement.
+Développé par **Abdallah BENALI**, **Dina KANGNI**, **Mohammed ZOUAD** et **Salim ACHAK**.  
+Sous la direction de **Gaël MAHÉ** et **David JANISZEK**.  
+Dans le cadre de l'UE Projet Professionnel — Université Paris Cité, 2026.
 
+---
 
+## Licence
 
-
-# DOCUMENTATION
-
-L'intégralité de la documentation est disponible sur: https://l2f2-dequantification-app.netlify.app/.
-Si vous voulez consulter ou télécharger le cahier des charges, le cahier de recette, le plan de test et le cahier de conception générale et détaillée, rendez vous sur la page d'acceuil, section "Téléchargement des documents" ou utilisez la barre de recherche.
-
-
-
-
-# AUTEURS
-
-Développé par Abdallah BENALI, Dina KANGNI, Mohammed ZOUAD et Salim Achak.
-
-Sous la direction de Gaël MAHE et de David JANISZEK.
-Dans le cadre de l'UE Projet Professionnel dans l'université Paris Cité.
-
-
-
-
-# LICENSE
-
-Ce projet est distribué sous licence Apache 2.0.
-
-Toute réutilisation ou redistribution commerciale doit mentionner explicitement les auteurs.
-
-Pour plus d'informations, vous pouvez vous référer à la documentation du projet.
-
---
+Ce projet est distribué sous licence **Apache 2.0**.  
+Toute réutilisation ou redistribution commerciale doit mentionner explicitement les auteurs.  
+Voir `LICENSE.txt` pour plus de détails.
